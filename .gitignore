@@ -29,6 +29,9 @@ staticfiles/
 media/
 *.log
 
+# SQLite production database — never commit, lives on the server disk only
+db.sqlite3
+
 # Environment variables
 .env
 .env.*
