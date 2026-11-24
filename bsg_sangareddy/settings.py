@@ -22,13 +22,21 @@ ALLOWED_HOSTS = (
     if _allowed_hosts_env != '*' else ['*']
 )
 
-# CSRF: pre-seed common platform domains; extend via CSRF_TRUSTED_ORIGINS env var.
+# Always allow the official custom domain (no env var needed for this)
+_official_domain = 'bsgsrd.indevs.in'
+if _official_domain not in ALLOWED_HOSTS and ALLOWED_HOSTS != ['*']:
+    ALLOWED_HOSTS.append(_official_domain)
+
+# CSRF: pre-seed common platform domains + official custom domain.
 CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1',
     'http://localhost',
     'https://*.onrender.com',
     'https://*.railway.app',
     'https://*.pythonanywhere.com',
+    # Official production domain
+    'https://bsgsrd.indevs.in',
+    'http://bsgsrd.indevs.in',
 ]
 _custom_csrf = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
 if _custom_csrf:
