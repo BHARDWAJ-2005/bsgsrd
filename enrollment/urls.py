@@ -36,6 +36,7 @@ urlpatterns = [
 
     # District Admin
     path('district/', views.district_dashboard_view, name='district_dashboard'),
+    path('district/account/', views.district_admin_account_view, name='district_admin_account'),
     path('district/schools/add/', views.district_add_school, name='district_add_school'),
     path('district/schools/reset-password/', views.district_reset_school_password_generic, name='district_reset_school_password_generic'),
     path('district/schools/<str:udise_code>/reset-password/', views.district_reset_school_password, name='district_reset_school_password'),

@@ -679,3 +679,73 @@ class BSGPlatformTests(TestCase):
         self.assertEqual(res_pdf.status_code, 200)
         self.assertEqual(res_pdf['Content-Type'], "application/pdf")
         self.assertIn("BSG_Roster_36170100101", res_pdf['Content-Disposition'])
+
+    def test_admin_login_page_hides_credentials(self):
+        """Verify login page does not pre-fill or expose default admin credentials."""
+        res = self.client.get(reverse('login'))
+        self.assertEqual(res.status_code, 200)
+        self.assertNotContains(res, "Admin@Sangareddy2026")
+
+    def test_admin_change_username_and_password_with_past_password(self):
+        """Verify District Admin can change username & password only with valid current password."""
+        self.client.login(username="admin", password="Admin@Sangareddy2026")
+
+        # 1. Wrong current password must fail
+        res_bad = self.client.post(reverse('district_admin_account'), {
+            'current_password': 'WrongPassword123',
+            'new_username': 'deo_sangareddy',
+            'new_password': 'NewAdminPass@2027',
+            'confirm_password': 'NewAdminPass@2027',
+        })
+        self.assertEqual(res_bad.status_code, 302)
+        self.admin_user.refresh_from_db()
+        self.assertEqual(self.admin_user.username, 'admin')
+        self.assertTrue(self.admin_user.check_password('Admin@Sangareddy2026'))
+
+        # 2. Correct current password updates both username and password
+        res_ok = self.client.post(reverse('district_admin_account'), {
+            'current_password': 'Admin@Sangareddy2026',
+            'new_username': 'deo_sangareddy',
+            'new_password': 'NewAdminPass@2027',
+            'confirm_password': 'NewAdminPass@2027',
+        })
+        self.assertEqual(res_ok.status_code, 302)
+        self.admin_user.refresh_from_db()
+        self.assertEqual(self.admin_user.username, 'deo_sangareddy')
+        self.assertTrue(self.admin_user.check_password('NewAdminPass@2027'))
+
+        # 3. Changing password again requires the new (past) password
+        res_ok2 = self.client.post(reverse('district_admin_account'), {
+            'current_password': 'NewAdminPass@2027',
+            'new_username': 'deo_sangareddy',
+            'new_password': 'AnotherAdminPass@2028',
+            'confirm_password': 'AnotherAdminPass@2028',
+        })
+        self.assertEqual(res_ok2.status_code, 302)
+        self.admin_user.refresh_from_db()
+        self.assertTrue(self.admin_user.check_password('AnotherAdminPass@2028'))
+
+    def test_school_voluntary_change_password_requires_current(self):
+        """Verify schools with must_change_password=False must provide current password to change it."""
+        self.client.login(username="36170100101", password="BSG@Sangareddy2026")
+
+        # 1. Wrong current password fails
+        res_fail = self.client.post(reverse('change_password'), {
+            'current_password': 'WrongPassword',
+            'new_password': 'MySchoolNew@2027',
+            'confirm_password': 'MySchoolNew@2027',
+        })
+        self.assertEqual(res_fail.status_code, 200)
+        self.user_coed.refresh_from_db()
+        self.assertTrue(self.user_coed.check_password('BSG@Sangareddy2026'))
+
+        # 2. Correct current password succeeds
+        res_ok = self.client.post(reverse('change_password'), {
+            'current_password': 'BSG@Sangareddy2026',
+            'new_password': 'MySchoolNew@2027',
+            'confirm_password': 'MySchoolNew@2027',
+        })
+        self.assertRedirects(res_ok, reverse('school_dashboard'))
+        self.user_coed.refresh_from_db()
+        self.assertTrue(self.user_coed.check_password('MySchoolNew@2027'))
+

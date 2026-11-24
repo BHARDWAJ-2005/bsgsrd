@@ -354,17 +354,21 @@ def forgot_password_view(request):
 
 
 @login_required
+@login_required
 def change_password_view(request):
     """
     Mandatory or voluntary password change for school.
     If the school has no mobile numbers on file, providing at least one valid
     10-digit mobile (HM or Unit Leader) is strictly mandatory before accessing dashboard.
+    When changing password voluntarily (must_change_password=False), current password is required.
     """
     school = getattr(request.user, 'school_profile', None)
     needs_contact = not school.has_recovery_contact() if school else False
+    require_current_pw = (not school.must_change_password) if school else True
     leaders = list(school.unit_leaders.all().order_by('id')) if school else []
 
     if request.method == 'POST':
+        current_password = request.POST.get('current_password', '').strip()
         new_password = request.POST.get('new_password', '').strip()
         confirm_password = request.POST.get('confirm_password', '').strip()
         hm_name = request.POST.get('hm_name', '').strip()
@@ -388,7 +392,9 @@ def change_password_view(request):
         if len(clean_new_l) >= 10:
             has_valid_leader = True
 
-        if len(new_password) < 8:
+        if require_current_pw and not request.user.check_password(current_password):
+            messages.error(request, "Current password is incorrect. Please enter your existing password.")
+        elif len(new_password) < 8:
             messages.error(request, "Password must be at least 8 characters long.")
         elif new_password == 'BSG@Sangareddy2026':
             messages.error(request, "You cannot reuse the default password. Please choose a unique password.")
@@ -456,6 +462,7 @@ def change_password_view(request):
     return render(request, 'change_password.html', {
         'school': school,
         'needs_contact': needs_contact,
+        'require_current_pw': require_current_pw,
         'leaders': leaders,
     })
 
@@ -1170,6 +1177,69 @@ def export_school_pdf_view(request):
     return response
 
 
+@user_passes_test(is_district_admin_check, login_url='/login/')
+def district_admin_account_view(request):
+    """
+    Allows the District Admin to update their authorized username and/or password.
+    Requires verification of the current (past) password for security.
+    """
+    if request.method != 'POST':
+        return redirect('district_dashboard')
+
+    import re
+    current_password = request.POST.get('current_password', '').strip()
+    new_username = request.POST.get('new_username', '').strip()
+    new_password = request.POST.get('new_password', '').strip()
+    confirm_password = request.POST.get('confirm_password', '').strip()
+
+    if not current_password or not request.user.check_password(current_password):
+        messages.error(request, "Current (past) password is incorrect. Admin credentials were not modified.")
+        return redirect('district_dashboard')
+
+    changes = []
+    if new_username and new_username != request.user.username:
+        if len(new_username) < 4 or not re.match(r'^[a-zA-Z0-9_.-]+$', new_username):
+            messages.error(request, "Admin username must be at least 4 characters (letters, numbers, _, ., - only).")
+            return redirect('district_dashboard')
+        if User.objects.filter(username=new_username).exclude(pk=request.user.pk).exists():
+            messages.error(request, f"Username '{new_username}' is already in use. Please choose another.")
+            return redirect('district_dashboard')
+        old_username = request.user.username
+        request.user.username = new_username
+        changes.append(f"username changed from '{old_username}' to '{new_username}'")
+
+    if new_password:
+        if len(new_password) < 8:
+            messages.error(request, "New admin password must be at least 8 characters long.")
+            return redirect('district_dashboard')
+        if new_password == 'Admin@Sangareddy2026':
+            messages.error(request, "You cannot reuse the default password. Please choose a strong unique password.")
+            return redirect('district_dashboard')
+        if new_password != confirm_password:
+            messages.error(request, "New password and confirmation do not match.")
+            return redirect('district_dashboard')
+        request.user.set_password(new_password)
+        changes.append("password updated")
+
+    if not changes:
+        messages.info(request, "No changes were submitted to your admin account.")
+        return redirect('district_dashboard')
+
+    request.user.save()
+    update_session_auth_hash(request, request.user)
+
+    AuditLog.objects.create(
+        user=request.user,
+        action="ADMIN_CREDENTIAL_CHANGE",
+        target_type="DistrictAdmin",
+        description=f"District Admin credentials updated: {', '.join(changes)}.",
+        ip_address=get_client_ip(request)
+    )
+    messages.success(request, f"Admin account updated successfully ({', '.join(changes)}).")
+    return redirect('district_dashboard')
+
+
+
 # ==========================================
 # DISTRICT ADMIN COMMAND CENTER
 # ==========================================
@@ -1514,3 +1584,66 @@ def district_export_school_pdf_view(request, udise_code):
     filename = f"BSG_Roster_{school.udise_code}_{clean_name}.pdf"
     response['Content-Disposition'] = f'inline; filename="{filename}"'
     return response
+
+
+@user_passes_test(is_district_admin_check, login_url='/login/')
+def district_admin_account_view(request):
+    """
+    Allows the District Admin to update their authorized username and/or password.
+    Requires verification of the current (past) password for security.
+    """
+    if request.method != 'POST':
+        return redirect('district_dashboard')
+
+    import re
+    current_password = request.POST.get('current_password', '').strip()
+    new_username = request.POST.get('new_username', '').strip()
+    new_password = request.POST.get('new_password', '').strip()
+    confirm_password = request.POST.get('confirm_password', '').strip()
+
+    if not current_password or not request.user.check_password(current_password):
+        messages.error(request, "Current (past) password is incorrect. Admin credentials were not modified.")
+        return redirect('district_dashboard')
+
+    changes = []
+    if new_username and new_username != request.user.username:
+        if len(new_username) < 4 or not re.match(r'^[a-zA-Z0-9_.-]+$', new_username):
+            messages.error(request, "Admin username must be at least 4 characters (letters, numbers, _, ., - only).")
+            return redirect('district_dashboard')
+        if User.objects.filter(username=new_username).exclude(pk=request.user.pk).exists():
+            messages.error(request, f"Username '{new_username}' is already in use. Please choose another.")
+            return redirect('district_dashboard')
+        old_username = request.user.username
+        request.user.username = new_username
+        changes.append(f"username changed from '{old_username}' to '{new_username}'")
+
+    if new_password:
+        if len(new_password) < 8:
+            messages.error(request, "New admin password must be at least 8 characters long.")
+            return redirect('district_dashboard')
+        if new_password == 'Admin@Sangareddy2026':
+            messages.error(request, "You cannot reuse the default password. Please choose a strong unique password.")
+            return redirect('district_dashboard')
+        if new_password != confirm_password:
+            messages.error(request, "New password and confirmation do not match.")
+            return redirect('district_dashboard')
+        request.user.set_password(new_password)
+        changes.append("password updated")
+
+    if not changes:
+        messages.info(request, "No changes were submitted to your admin account.")
+        return redirect('district_dashboard')
+
+    request.user.save()
+    update_session_auth_hash(request, request.user)
+
+    AuditLog.objects.create(
+        user=request.user,
+        action="ADMIN_CREDENTIAL_CHANGE",
+        target_type="DistrictAdmin",
+        description=f"District Admin credentials updated: {', '.join(changes)}.",
+        ip_address=get_client_ip(request)
+    )
+    messages.success(request, f"Admin account updated successfully ({', '.join(changes)}).")
+    return redirect('district_dashboard')
+
