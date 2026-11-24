@@ -8,7 +8,7 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'bsg-sangareddy-production-secret-key-telangana-scouts-and-guides-2026')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'secure-string-key-1810')
 
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1')
 
