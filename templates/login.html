@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}School Login | Bharat Scouts & Guides Sangareddy{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto my-6 sm:my-10 space-y-4">
+
+    <!-- Top Navigation / Back to Landing Page -->
+    <div class="flex items-center justify-between text-xs px-1">
+        <a href="{% url 'home' %}" class="inline-flex items-center space-x-1.5 font-bold text-blue-900 hover:text-blue-700 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm transition">
+            <span>←</span>
+            <span>{% if current_lang == 'te' %}ప్రధాన పేజీ (లక్ష్యాలు &amp; సమాచారం){% else %}Portal Home (Motto &amp; Aim){% endif %}</span>
+        </a>
+        <a href="https://www.instagram.com/bsg_sangareddy?utm_source=qr&gwpx=bW53cGNkMHJqMDRz" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1 font-bold text-pink-700 hover:underline">
+            <span>📸</span>
+            <span>@bsg_sangareddy</span>
+        </a>
+    </div>
+
+    <!-- Header Card -->
+    <div class="text-center mb-4">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-900 text-amber-400 text-3xl shadow-lg border-2 border-amber-400 mb-3">
+            ⚜
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-blue-950 tracking-tight">
+            {% if current_lang == 'te' %}పాఠశాల లాగిన్ పోర్టల్{% else %}School Login Portal{% endif %}
+        </h1>
+        <p class="text-xs sm:text-sm text-slate-600 mt-1">
+            {% if current_lang == 'te' %}
+                భారత్ స్కౌట్స్ & గైడ్స్ గుర్తింపు పొందిన పాఠశాలల నమోదు పోర్టల్, సంగారెడ్డి జిల్లా
+            {% else %}
+                Bharat Scouts & Guides Sanctioned Schools Enrollment Portal, Sangareddy District
+            {% endif %}
+        </p>
+        <div class="mt-2.5 inline-flex items-center space-x-2 px-3.5 py-1 bg-blue-50 border border-blue-200 text-blue-900 rounded-full text-xs font-semibold shadow-sm">
+            <span class="text-amber-500 font-bold">⚜</span>
+            <span>Official Sanctioned Institutional Portal · Sangareddy District</span>
+        </div>
+    </div>
+
+    <!-- Login Container Card -->
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+        <!-- Login Role Tabs -->
+        <div class="flex border-b border-slate-200 bg-slate-50 text-sm font-semibold">
+            <button type="button" id="tab-school-btn" onclick="switchLoginTab('school')" class="flex-1 py-3.5 px-4 text-center border-b-2 border-blue-800 text-blue-900 bg-white transition">
+                🏫 {% if current_lang == 'te' %}పాఠశాల లాగిన్{% else %}School Login{% endif %}
+            </button>
+            <button type="button" id="tab-admin-btn" onclick="switchLoginTab('admin')" class="flex-1 py-3.5 px-4 text-center text-slate-500 hover:text-slate-800 transition">
+                🏛️ {% if current_lang == 'te' %}జిల్లా అడ్మిన్ లాగిన్{% else %}District Office / Admin{% endif %}
+            </button>
+        </div>
+
+        <div class="p-6 sm:p-8">
+            <!-- SCHOOL LOGIN FORM (Cascading Dropdowns) -->
+            <form id="school-login-form" method="POST" action="{% url 'login' %}">
+                {% csrf_token %}
+                <input type="hidden" name="login_type" value="school">
+
+                <!-- Step 1: Select Mandal -->
+                <div class="mb-4">
+                    <label for="mandal-select" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        1. {% if current_lang == 'te' %}మండలాన్ని ఎంచుకోండి{% else %}Select Mandal{% endif %} <span class="text-red-500">*</span>
+                    </label>
+                    <select id="mandal-select" name="mandal_id" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                        <option value="">-- {% if current_lang == 'te' %}మండలాన్ని ఎంచుకోండి{% else %}Select Mandal{% endif %} --</option>
+                        {% for m in mandals %}
+                            <option value="{{ m.id }}">{{ m.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Step 2: Cascading School Dropdown (UDISE Keyed) -->
+                <div class="mb-4">
+                    <label for="school-select" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        2. {% if current_lang == 'te' %}పాఠశాలను ఎంచుకోండి (UDISE కోడ్ సహా){% else %}Select Recognized School (UDISE Keyed){% endif %} <span class="text-red-500">*</span>
+                    </label>
+                    <select id="school-select" name="school_udise" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-50" disabled required>
+                        <option value="">-- First Select a Mandal Above --</option>
+                    </select>
+                    <p class="text-[11px] text-slate-500 mt-1">
+                        Each school is securely identified by its official 11-digit UDISE code.
+                    </p>
+                </div>
+
+                <!-- Selected School Info Badge (Auto-shown when school selected) -->
+                <div id="school-info-badge" class="hidden mb-4 p-3 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-center justify-between">
+                    <div>
+                        <span class="font-bold" id="badge-school-type">School Type</span>
+                    </div>
+                    <div>
+                        <span class="bg-blue-200 text-blue-800 font-bold px-2 py-0.5 rounded" id="badge-school-quota">Quota</span>
+                    </div>
+                </div>
+
+                <!-- Step 3: Password -->
+                <div class="mb-5">
+                    <label for="school-password" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        3. {% if current_lang == 'te' %}పాస్‌వర్డ్{% else %}Password{% endif %} <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <input type="password" id="school-password" name="password" value="BSG@Sangareddy2026" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition pr-10" required>
+                        <button type="button" onclick="togglePasswordVisibility('school-password', this)" class="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600 font-semibold">
+                            Show
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between mt-1.5 text-[11px] text-slate-500">
+                        <span>Default: <code class="text-blue-700 font-mono font-bold">BSG@Sangareddy2026</code></span>
+                        <a href="{% url 'forgot_password' %}" class="text-blue-800 hover:text-blue-950 font-bold hover:underline flex items-center space-x-1" title="Self-service password recovery or district office reset">
+                            <span>🔑</span>
+                            <span>{% if current_lang == 'te' %}పాస్‌వర్డ్ మర్చిపోయారా?{% else %}Forgot Password?{% endif %}</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="w-full py-3 px-4 bg-blue-900 hover:bg-blue-800 text-white font-bold text-sm rounded-xl shadow-md hover:shadow-lg transition duration-150 flex items-center justify-center space-x-2">
+                    <span>{% if current_lang == 'te' %}పోర్టల్‌లోకి ప్రవేశించండి{% else %}Sign In to School Portal{% endif %}</span>
+                    <span>→</span>
+                </button>
+            </form>
+
+            <!-- DISTRICT ADMIN LOGIN FORM (Toggled via Tab) -->
+            <form id="admin-login-form" method="POST" action="{% url 'login' %}" class="hidden">
+                {% csrf_token %}
+                <input type="hidden" name="login_type" value="admin">
+
+                <div class="mb-4">
+                    <label for="admin_username" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Admin Officer Username <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="admin_username" name="admin_username" value="admin" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                </div>
+
+                <div class="mb-5">
+                    <label for="admin_password" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Admin Security Password <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <input type="password" id="admin_password" name="admin_password" value="Admin@Sangareddy2026" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition pr-10" required>
+                        <button type="button" onclick="togglePasswordVisibility('admin_password', this)" class="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600 font-semibold">
+                            Show
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mt-1">Credentials for District Coordinator: <code class="text-blue-700 font-mono font-bold">admin / Admin@Sangareddy2026</code></p>
+                </div>
+
+                <button type="submit" class="w-full py-3 px-4 bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-sm rounded-xl shadow-md hover:shadow-lg transition duration-150 flex items-center justify-center space-x-2">
+                    <span>Open District Command Center</span>
+                    <span>→</span>
+                </button>
+            </form>
+
+            <!-- Security & Assistance Bar -->
+            <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <div class="flex items-center space-x-1.5 text-slate-500">
+                    <span class="text-emerald-600 font-bold">🔒</span>
+                    <span class="font-medium">Official Government Portal · Authenticated Session</span>
+                </div>
+                <button type="button" onclick="autoSelectSampleSchool()" class="text-slate-400 hover:text-blue-700 text-[11px] hover:underline font-mono" title="Quick sample selection for testing">
+                    Quick Sample Select
+                </button>
+            </div>
+        </div>
+
+        <!-- Help & District Secretary Support Notice Box -->
+        <div class="bg-amber-50/70 px-6 py-4 border-t border-amber-200 text-xs text-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div>
+                <span class="font-bold text-amber-950">Help Desk / Helpline:</span>
+                <span class="text-slate-600">District Secretary Sri Vancha Madhava Reddy</span>
+                <a href="tel:+919440069750" class="font-mono font-bold text-blue-900 hover:underline block sm:inline sm:ml-1">+91 94400 69750</a>
+            </div>
+            <div class="flex items-center space-x-3 shrink-0">
+                <a href="{% url 'help' %}" class="text-blue-800 hover:underline font-bold">User Guide &amp; FAQ</a>
+                <span>•</span>
+                <a href="{% url 'contact' %}" class="text-blue-800 hover:underline">Headquarters</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function switchLoginTab(tab) {
+    const schoolForm = document.getElementById('school-login-form');
+    const adminForm = document.getElementById('admin-login-form');
+    const schoolTabBtn = document.getElementById('tab-school-btn');
+    const adminTabBtn = document.getElementById('tab-admin-btn');
+
+    if (tab === 'admin') {
+        schoolForm.classList.add('hidden');
+        adminForm.classList.remove('hidden');
+        adminTabBtn.classList.add('border-b-2', 'border-emerald-700', 'text-emerald-900', 'bg-white');
+        adminTabBtn.classList.remove('text-slate-500');
+        schoolTabBtn.classList.remove('border-b-2', 'border-blue-800', 'text-blue-900', 'bg-white');
+        schoolTabBtn.classList.add('text-slate-500');
+    } else {
+        adminForm.classList.add('hidden');
+        schoolForm.classList.remove('hidden');
+        schoolTabBtn.classList.add('border-b-2', 'border-blue-800', 'text-blue-900', 'bg-white');
+        schoolTabBtn.classList.remove('text-slate-500');
+        adminTabBtn.classList.remove('border-b-2', 'border-emerald-700', 'text-emerald-900', 'bg-white');
+        adminTabBtn.classList.add('text-slate-500');
+    }
+}
+
+function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = 'Hide';
+    } else {
+        input.type = 'password';
+        btn.textContent = 'Show';
+    }
+}
+
+// Check URL param ?tab=admin
+if (new URLSearchParams(window.location.search).get('tab') === 'admin') {
+    switchLoginTab('admin');
+}
+
+function autoSelectSampleSchool() {
+    switchLoginTab('school');
+    const mandalSelect = document.getElementById('mandal-select');
+    if (mandalSelect.options.length > 1) {
+        mandalSelect.selectedIndex = 1;
+        mandalSelect.dispatchEvent(new Event('change'));
+        setTimeout(() => {
+            const schoolSelect = document.getElementById('school-select');
+            if (schoolSelect.options.length > 1) {
+                schoolSelect.selectedIndex = 1;
+                schoolSelect.dispatchEvent(new Event('change'));
+            }
+        }, 500);
+    }
+}
+</script>
+{% endblock %}

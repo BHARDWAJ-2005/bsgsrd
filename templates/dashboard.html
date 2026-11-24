@@ -1,0 +1,921 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ school.name }} | BSG Sangareddy Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- 1. School Header Banner & Quota Progress Meters -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+            <div>
+                <div class="flex flex-wrap items-center gap-2 mb-1">
+                    <span class="bg-blue-100 text-blue-900 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                        {{ school.get_school_type_display }}
+                    </span>
+                    <span class="bg-slate-100 text-slate-700 text-xs font-mono font-semibold px-2.5 py-0.5 rounded-full">
+                        UDISE: {{ school.udise_code }}
+                    </span>
+                    <span class="bg-amber-100 text-amber-900 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                        Mandal: {{ school.mandal.name }}
+                    </span>
+                </div>
+                <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                    {{ school.name }}
+                </h1>
+                <p class="text-xs text-slate-500 mt-0.5">
+                    District: Sangareddy · Allowed Classes: {{ school.allowed_classes|join:", " }} · Units: {{ school.allowed_units|join:", " }}
+                </p>
+            </div>
+
+            <!-- Action Buttons Toolbar -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="openModal('enrollStudentModal')" class="inline-flex items-center px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow hover:shadow-md transition">
+                    <span class="mr-1.5 text-base">+</span> Enroll Student
+                </button>
+                <button type="button" onclick="openModal('unitLeadersModal')" class="inline-flex items-center px-3.5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-semibold rounded-xl shadow transition">
+                    👥 Unit Leaders ({{ unit_leaders.count }})
+                </button>
+                <a href="{% url 'export_school_pdf' %}" target="_blank" class="inline-flex items-center px-3.5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-semibold rounded-xl shadow transition" title="Print/Save Official Verification Report">
+                    📄 Official PDF Report
+                </a>
+            </div>
+        </div>
+
+        <!-- Quota Progress Meter Cards (Boys, Girls, Total) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
+            <!-- Boys Quota Card -->
+            {% if 'BOY' in allowed_genders %}
+            <div class="bg-blue-50/60 rounded-xl p-4 border border-blue-200">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-blue-900 uppercase tracking-wider">Scouts / Cubs (Boys)</span>
+                    <span class="text-xs font-bold text-blue-700 font-mono">
+                        {{ school.boys_enrolled_count }} / {{ school.boys_quota }}
+                    </span>
+                </div>
+                <div class="w-full bg-blue-200 rounded-full h-3 overflow-hidden">
+                    <div class="bg-blue-600 h-3 rounded-full transition-all duration-500" style="width: {{ boys_pct }}%"></div>
+                </div>
+                <div class="flex justify-between items-center mt-2 text-[11px] text-blue-800">
+                    <span>{{ boys_pct }}% enrolled</span>
+                    <span>Remaining: <b>{{ school.boys_remaining_quota }}</b></span>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Girls Quota Card -->
+            {% if 'GIRL' in allowed_genders %}
+            <div class="bg-emerald-50/60 rounded-xl p-4 border border-emerald-200">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-emerald-900 uppercase tracking-wider">Guides / Bulbuls (Girls)</span>
+                    <span class="text-xs font-bold text-emerald-700 font-mono">
+                        {{ school.girls_enrolled_count }} / {{ school.girls_quota }}
+                    </span>
+                </div>
+                <div class="w-full bg-emerald-200 rounded-full h-3 overflow-hidden">
+                    <div class="bg-emerald-600 h-3 rounded-full transition-all duration-500" style="width: {{ girls_pct }}%"></div>
+                </div>
+                <div class="flex justify-between items-center mt-2 text-[11px] text-emerald-800">
+                    <span>{{ girls_pct }}% enrolled</span>
+                    <span>Remaining: <b>{{ school.girls_remaining_quota }}</b></span>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Total Quota Card -->
+            <div class="bg-slate-100 rounded-xl p-4 border border-slate-200">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Total School Quota</span>
+                    <span class="text-xs font-bold text-slate-700 font-mono">
+                        {{ school.total_enrolled_count }} / {{ school.total_quota }}
+                    </span>
+                </div>
+                <div class="w-full bg-slate-300 rounded-full h-3 overflow-hidden">
+                    <div class="bg-slate-700 h-3 rounded-full transition-all duration-500" style="width: {{ total_pct }}%"></div>
+                </div>
+                <div class="flex justify-between items-center mt-2 text-[11px] text-slate-600">
+                    <span>{{ total_pct }}% completed</span>
+                    <span>Total Slots: <b>{{ school.total_quota }}</b></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Excel Operations Bar -->
+        <div class="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="flex items-center space-x-2 text-slate-600">
+                <span class="font-bold text-slate-800">Excel Toolkit:</span>
+                <span>Use custom template for fast bulk data collection</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="{% url 'export_excel_template' %}" class="inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium rounded-lg border border-slate-300 transition">
+                    📥 Download Excel Template
+                </a>
+                <button type="button" onclick="openModal('importExcelModal')" class="inline-flex items-center px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 font-medium rounded-lg border border-amber-300 transition">
+                    📤 Import from Excel
+                </button>
+                <a href="{% url 'export_school_excel' %}" class="inline-flex items-center px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-900 font-medium rounded-lg border border-blue-300 transition">
+                    📊 Export Full Workbook (.xlsx)
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Excel Import Error Alert Box (if present from recent upload) -->
+    {% if request.session.excel_import_errors %}
+    <div class="bg-red-50 border border-red-300 rounded-xl p-4 text-xs text-red-900 shadow-sm">
+        <div class="flex items-center justify-between pb-2 border-b border-red-200 mb-2">
+            <span class="font-bold text-sm text-red-800">⚠️ Excel Upload Errors Detected (All-or-Nothing Rollback Applied)</span>
+            <button type="button" onclick="this.closest('div.bg-red-50').remove()" class="text-red-700 font-bold hover:underline">Dismiss</button>
+        </div>
+        <p class="mb-2">The following rows contain issues that must be corrected before importing:</p>
+        <ul class="list-disc list-inside space-y-1 font-mono text-[11px] max-h-48 overflow-y-auto bg-white p-3 rounded border border-red-200">
+            {% for err in request.session.excel_import_errors %}
+                <li>{{ err }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- 2. Students List Table & Filter Section -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <!-- Table Filter / Search Controls -->
+        <div class="p-4 sm:p-5 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            <!-- Search Input -->
+            <div class="relative flex-1 max-w-md">
+                <input type="text" id="table-live-search" value="{{ q }}" placeholder="Search students by name or father's name..." class="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-blue-500">
+                <span class="absolute left-3 top-2.5 text-slate-400 text-sm">🔍</span>
+            </div>
+
+            <!-- Class & Status Filters -->
+            <form method="GET" class="flex flex-wrap items-center gap-2">
+                <select name="class" onchange="this.form.submit()" class="px-2.5 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-700">
+                    <option value="">All Classes</option>
+                    {% for c in allowed_classes %}
+                        <option value="{{ c }}" {% if cls_filter == c|stringformat:"i" %}selected{% endif %}>Class {{ c }}</option>
+                    {% endfor %}
+                </select>
+
+                <select name="gender" onchange="this.form.submit()" class="px-2.5 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-700">
+                    <option value="">All Genders</option>
+                    <option value="BOY" {% if gender_filter == 'BOY' %}selected{% endif %}>Boys (Scouts/Cubs)</option>
+                    <option value="GIRL" {% if gender_filter == 'GIRL' %}selected{% endif %}>Girls (Guides/Bulbuls)</option>
+                </select>
+
+                <select name="status" onchange="this.form.submit()" class="px-2.5 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-700">
+                    <option value="">All Modes</option>
+                    <option value="SHORT" {% if status_filter == 'SHORT' %}selected{% endif %}>SHORT Mode (Basic)</option>
+                    <option value="BRIEF" {% if status_filter == 'BRIEF' %}selected{% endif %}>BRIEF Mode (Tailoring)</option>
+                </select>
+
+                {% if q or cls_filter or gender_filter or status_filter %}
+                    <a href="{% url 'school_dashboard' %}" class="px-2.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-lg transition">
+                        Reset
+                    </a>
+                {% endif %}
+            </form>
+        </div>
+
+        <!-- Student Data Table -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                    <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                        <th class="py-3 px-3 w-10 text-center">#</th>
+                        <th class="py-3 px-3">Student Name</th>
+                        <th class="py-3 px-3">Father's Name</th>
+                        <th class="py-3 px-3 text-center">Class</th>
+                        <th class="py-3 px-3 text-center">Gender</th>
+                        <th class="py-3 px-3 text-center">Height (cm)</th>
+                        <th class="py-3 px-3 text-center">Uniform</th>
+                        <th class="py-3 px-3 text-center">Shoe</th>
+                        <th class="py-3 px-3 text-center">Mode</th>
+                        <th class="py-3 px-3 text-center">Tailoring Measurements</th>
+                        <th class="py-3 px-3 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for s in students %}
+                    <tr class="student-table-row table-row-hover">
+                        <td class="py-3 px-3 text-center font-mono text-slate-400">{{ forloop.counter }}</td>
+                        <td class="py-3 px-3 font-bold text-slate-900">{{ s.name }}</td>
+                        <td class="py-3 px-3 text-slate-600">{{ s.father_name }}</td>
+                        <td class="py-3 px-3 text-center font-semibold">{{ s.class_level }}</td>
+                        <td class="py-3 px-3 text-center">
+                            {% if s.gender == 'BOY' %}
+                                <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">Boy</span>
+                            {% else %}
+                                <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">Girl</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-3 text-center font-mono">{{ s.height_cm }}</td>
+                        <td class="py-3 px-3 text-center font-bold text-blue-900 font-mono">Size {{ s.uniform_size }}</td>
+                        <td class="py-3 px-3 text-center font-mono">{{ s.shoe_size }}</td>
+                        <td class="py-3 px-3 text-center">
+                            {% if s.detail_level == 'BRIEF' %}
+                                <span class="badge-brief text-[10px] font-bold px-2 py-0.5 rounded-full">BRIEF (Complete)</span>
+                            {% else %}
+                                <span class="badge-short text-[10px] font-bold px-2 py-0.5 rounded-full" title="Incomplete measurements - Click Edit to add tailoring specs">SHORT</span>
+                            {% endif %}
+                        </td>
+                        <!-- Tailoring specs preview -->
+                        <td class="py-3 px-3 text-center">
+                            {% if s.detail_level == 'BRIEF' %}
+                                <div class="tooltip-container cursor-pointer text-blue-700 hover:underline font-mono text-[11px]">
+                                    {% if s.gender == 'BOY' %}
+                                        Ch:{{ s.chest|default:"-" }} · W:{{ s.waist|default:"-" }} · Sh:{{ s.shoulder|default:"-" }}
+                                    {% else %}
+                                        Bst:{{ s.bust|default:"-" }} · W:{{ s.waist|default:"-" }} · Km:{{ s.kameez_length|default:"-" }}
+                                    {% endif %}
+                                    <div class="tooltip-content">
+                                        {% if s.gender == 'BOY' %}
+                                            Chest: {{ s.chest }}", Waist: {{ s.waist }}", Neck: {{ s.neck }}", Shoulder: {{ s.shoulder }}", Sleeve: {{ s.sleeve }}", Shirt Length: {{ s.shirt_length }}", Pant Length: {{ s.pant_length }}"
+                                        {% else %}
+                                            Bust: {{ s.bust }}", Waist: {{ s.waist }}", Hip: {{ s.hip }}", Shoulder: {{ s.shoulder }}", Sleeve: {{ s.sleeve }}", Kameez: {{ s.kameez_length }}", Salwar: {{ s.salwar_length }}"
+                                        {% endif %}
+                                        {% if s.dob %}<br/>DOB: {{ s.dob }}{% endif %}
+                                        {% if s.parent_mobile %}<br/>Mobile: {{ s.parent_mobile }}{% endif %}
+                                    </div>
+                                </div>
+                            {% else %}
+                                <span class="text-slate-400 italic text-[11px]">Standard size only</span>
+                            {% endif %}
+                        </td>
+                        <!-- Actions -->
+                        <td class="py-3 px-3 text-right space-x-1 whitespace-nowrap">
+                            <button type="button" onclick="openEditStudentModal({{ s.id }})" class="px-2.5 py-1 bg-slate-100 hover:bg-blue-100 text-blue-700 font-semibold rounded border border-slate-200 transition text-[11px]">
+                                Edit / Measurements
+                            </button>
+                            <form method="POST" action="{% url 'delete_student' s.id %}" class="inline-block" onsubmit="return confirm('Delete student {{ s.name }}? This will restore 1 quota slot.');">
+                                {% csrf_token %}
+                                <button type="submit" class="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-semibold rounded border border-red-200 transition text-[11px]">
+                                    Delete
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="11" class="py-12 text-center text-slate-400">
+                            <div class="text-3xl mb-2">📋</div>
+                            <div class="text-sm font-semibold text-slate-600">No students enrolled yet</div>
+                            <div class="text-xs text-slate-400 mt-1">Click "Enroll Student" above or upload your school Excel sheet.</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: ENROLL STUDENT (SHORT vs BRIEF with Quota Enforcement)  -->
+<!-- ============================================================== -->
+<div id="enrollStudentModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header with Mode Switcher -->
+        <div class="p-5 bg-slate-900 text-white flex items-center justify-between rounded-t-2xl">
+            <div>
+                <h3 class="font-bold text-base">Enroll Student</h3>
+                <p class="text-xs text-slate-300">Choose registration mode for fast entry or complete tailoring specs.</p>
+            </div>
+            <button type="button" onclick="closeModal('enrollStudentModal')" class="text-slate-400 hover:text-white font-bold text-xl">&times;</button>
+        </div>
+
+        <form id="enroll_student_form" method="POST" action="{% url 'enroll_student' %}" class="p-6 space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="detail_level" id="detail_level_input" value="SHORT">
+
+            <!-- Mode Toggle Switch (as specified in implementation guide) -->
+            <div class="bg-slate-100 p-1.5 rounded-xl flex items-center justify-between border border-slate-200">
+                <button type="button" id="mode-short-btn" class="flex-1 py-2 text-xs font-bold rounded-lg text-center transition">
+                    ⚡ SHORT Mode (Quick Entry)
+                </button>
+                <button type="button" id="mode-brief-btn" class="flex-1 py-2 text-xs font-bold rounded-lg text-center transition">
+                    📏 BRIEF Mode (Full Tailoring Specs)
+                </button>
+            </div>
+            <p class="text-[11px] text-slate-500 italic">
+                * SHORT records essential sizes for initial quota registration. BRIEF captures complete tailoring inches for uniforms.
+            </p>
+
+            <!-- Basic Student Details (SHORT & BRIEF) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Student Name <span class="text-red-500">*</span></label>
+                    <input type="text" name="name" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-blue-500" placeholder="Full legal name" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Father's Name <span class="text-red-500">*</span></label>
+                    <input type="text" name="father_name" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-blue-500" placeholder="Father's name" required>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Gender <span class="text-red-500">*</span></label>
+                    <select id="student_gender_select" name="gender" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm font-semibold" required>
+                        {% if 'BOY' in allowed_genders %}
+                            <option value="BOY">Boy (Scouts / Cubs)</option>
+                        {% endif %}
+                        {% if 'GIRL' in allowed_genders %}
+                            <option value="GIRL">Girl (Guides / Bulbuls)</option>
+                        {% endif %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Class <span class="text-red-500">*</span></label>
+                    <select name="class_level" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm" required>
+                        {% for c in allowed_classes %}
+                            <option value="{{ c }}">Class {{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Height in cm <span class="text-red-500">*</span></label>
+                    <input type="number" step="0.5" min="90" max="220" name="height_cm" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm" placeholder="e.g. 145.5" required>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Uniform Size <span class="text-red-500">*</span></label>
+                    <select name="uniform_size" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm font-bold text-blue-900" required>
+                        {% for sz in allowed_sizes %}
+                            <option value="{{ sz }}">Size {{ sz }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Shoe Size <span class="text-red-500">*</span></label>
+                    <input type="text" name="shoe_size" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm" placeholder="e.g. 5, 6, 7" required>
+                </div>
+            </div>
+
+            <!-- Optional BRIEF Fields (DOB & Mobile) -->
+            <div class="brief-field-group hidden grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Date of Birth</label>
+                    <input type="date" name="dob" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Parent Mobile Number</label>
+                    <input type="tel" name="parent_mobile" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm" placeholder="10-digit mobile">
+                </div>
+            </div>
+
+            <!-- BOYS Tailoring Measurements (Inches, 0.5 steps) -->
+            <div id="boys-measurements-container" class="brief-field-group hidden p-4 bg-blue-50/70 rounded-xl border border-blue-200">
+                <div class="text-xs font-bold text-blue-900 mb-2 flex items-center justify-between">
+                    <span>Boys Tailoring Measurements (Shirt & Pant in Inches)</span>
+                    <span class="text-[10px] text-blue-600 font-normal">0.5 inch increments accepted</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <div>
+                        <label class="text-[11px] text-slate-600 block">Chest (in)</label>
+                        <input type="number" step="0.5" min="15" max="55" name="chest" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-600 block">Waist (in)</label>
+                        <input type="number" step="0.5" min="15" max="55" name="waist" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-600 block">Neck (in)</label>
+                        <input type="number" step="0.5" min="10" max="25" name="neck" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-600 block">Shoulder (in)</label>
+                        <input type="number" step="0.5" min="10" max="25" name="shoulder" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-600 block">Sleeve (in)</label>
+                        <input type="number" step="0.5" min="10" max="35" name="sleeve" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-600 block">Shirt Length (in)</label>
+                        <input type="number" step="0.5" min="15" max="45" name="shirt_length" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-600 block">Pant Length (in)</label>
+                        <input type="number" step="0.5" min="15" max="48" name="pant_length" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                </div>
+            </div>
+
+            <!-- GIRLS Tailoring Measurements (Inches, 0.5 steps) -->
+            <div id="girls-measurements-container" class="brief-field-group hidden p-4 bg-emerald-50/70 rounded-xl border border-emerald-200">
+                <div class="text-xs font-bold text-emerald-900 mb-2 flex items-center justify-between">
+                    <span>Girls Tailoring Measurements (Kameez & Salwar/Skirt in Inches)</span>
+                    <span class="text-[10px] text-emerald-600 font-normal">0.5 inch increments accepted</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <div>
+                        <label class="text-[11px] text-slate-600 block">Bust (in)</label>
+                        <input type="number" step="0.5" min="15" max="55" name="bust" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-600 block">Waist (in)</label>
+                        <input type="number" step="0.5" min="15" max="55" name="waist_girls" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-600 block">Hip (in)</label>
+                        <input type="number" step="0.5" min="15" max="55" name="hip" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-600 block">Shoulder (in)</label>
+                        <input type="number" step="0.5" min="10" max="25" name="shoulder_girls" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-600 block">Sleeve (in)</label>
+                        <input type="number" step="0.5" min="10" max="35" name="sleeve_girls" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-600 block">Kameez Length (in)</label>
+                        <input type="number" step="0.5" min="15" max="48" name="kameez_length" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-600 block">Salwar/Skirt (in)</label>
+                        <input type="number" step="0.5" min="15" max="48" name="salwar_length" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
+                <button type="button" onclick="closeModal('enrollStudentModal')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800">
+                    Cancel
+                </button>
+                <button type="submit" class="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow transition">
+                    Save & Enroll Student
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: EDIT STUDENT (Upgrade SHORT to BRIEF / Add Measurements)-->
+<!-- ============================================================== -->
+<div id="editStudentModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-5 bg-blue-900 text-white flex items-center justify-between rounded-t-2xl">
+            <div>
+                <h3 class="font-bold text-base">Edit Student & Measurements</h3>
+                <span id="edit_gender_badge" class="bg-amber-400 text-blue-950 text-[10px] font-bold px-2 py-0.5 rounded"></span>
+            </div>
+            <button type="button" onclick="closeModal('editStudentModal')" class="text-slate-300 hover:text-white font-bold text-xl">&times;</button>
+        </div>
+
+        <form id="edit_student_form" method="POST" action="" class="p-6 space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="student_id" id="edit_student_id">
+            <input type="hidden" name="detail_level" value="BRIEF">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Student Name</label>
+                    <input type="text" id="edit_name" name="name" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Father's Name</label>
+                    <input type="text" id="edit_father_name" name="father_name" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm" required>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Class</label>
+                    <select id="edit_class_level" name="class_level" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm" required>
+                        {% for c in allowed_classes %}
+                            <option value="{{ c }}">Class {{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Height (cm)</label>
+                    <input type="number" step="0.5" id="edit_height_cm" name="height_cm" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Uniform Size</label>
+                    <select id="edit_uniform_size" name="uniform_size" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm font-bold text-blue-900" required>
+                        {% for sz in allowed_sizes %}
+                            <option value="{{ sz }}">Size {{ sz }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Shoe Size</label>
+                    <input type="text" id="edit_shoe_size" name="shoe_size" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Date of Birth</label>
+                    <input type="date" id="edit_dob" name="dob" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Parent Mobile</label>
+                    <input type="tel" id="edit_parent_mobile" name="parent_mobile" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm">
+                </div>
+            </div>
+
+            <!-- Boys Edit Measurements -->
+            <div id="edit_boys_measurements" class="hidden p-4 bg-blue-50/70 rounded-xl border border-blue-200">
+                <div class="text-xs font-bold text-blue-900 mb-2">Boys Tailoring Specs (Inches)</div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-600 block">Chest</label>
+                        <input type="number" step="0.5" id="edit_chest" name="chest" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-600 block">Waist</label>
+                        <input type="number" step="0.5" id="edit_waist" name="waist" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-600 block">Neck</label>
+                        <input type="number" step="0.5" id="edit_neck" name="neck" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-600 block">Shoulder</label>
+                        <input type="number" step="0.5" id="edit_shoulder" name="shoulder" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-600 block">Sleeve</label>
+                        <input type="number" step="0.5" id="edit_sleeve" name="sleeve" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-600 block">Shirt Length</label>
+                        <input type="number" step="0.5" id="edit_shirt_length" name="shirt_length" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-600 block">Pant Length</label>
+                        <input type="number" step="0.5" id="edit_pant_length" name="pant_length" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Girls Edit Measurements -->
+            <div id="edit_girls_measurements" class="hidden p-4 bg-emerald-50/70 rounded-xl border border-emerald-200">
+                <div class="text-xs font-bold text-emerald-900 mb-2">Girls Tailoring Specs (Inches)</div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-600 block">Bust</label>
+                        <input type="number" step="0.5" id="edit_bust" name="bust" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-600 block">Waist</label>
+                        <input type="number" step="0.5" id="edit_waist_g" name="waist" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-600 block">Hip</label>
+                        <input type="number" step="0.5" id="edit_hip" name="hip" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-600 block">Shoulder</label>
+                        <input type="number" step="0.5" id="edit_shoulder_g" name="shoulder" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-600 block">Sleeve</label>
+                        <input type="number" step="0.5" id="edit_sleeve_g" name="sleeve" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-600 block">Kameez Length</label>
+                        <input type="number" step="0.5" id="edit_kameez_length" name="kameez_length" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-600 block">Salwar Length</label>
+                        <input type="number" step="0.5" id="edit_salwar_length" name="salwar_length" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs">
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
+                <button type="button" onclick="closeModal('editStudentModal')" class="px-4 py-2 text-xs font-semibold text-slate-600">Cancel</button>
+                <button type="submit" class="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow">Update Student</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: UNIT LEADERS VIEWER (Officially Appointed & Frozen)      -->
+<!-- ============================================================== -->
+<div id="unitLeadersModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-5 bg-blue-950 text-white flex items-center justify-between rounded-t-2xl">
+            <div>
+                <h3 class="font-bold text-base flex items-center space-x-2">
+                    <span>👥</span>
+                    <span>Designated Teacher Unit Leaders</span>
+                </h3>
+                <p class="text-xs text-blue-200 mt-0.5">
+                    Official Bharat Scouts & Guides teacher leadership for {{ school.name }}.
+                </p>
+            </div>
+            <button type="button" onclick="closeModal('unitLeadersModal')" class="text-slate-300 hover:text-white font-bold text-xl">&times;</button>
+        </div>
+
+        <div class="p-6 space-y-5">
+            <!-- Unit Leader Management Notice & Appoint Button -->
+            <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-start space-x-3">
+                    <span class="text-base mt-0.5">👔</span>
+                    <div class="leading-relaxed">
+                        <span class="font-bold">Unit Leader Profiles & Measurements:</span>
+                        Update your appointed teacher leaders' profile information, mobile number, designation, and complete uniform sizing specifications below.
+                    </div>
+                </div>
+                {% if unit_leaders.count < school.max_leaders_count %}
+                <button type="button" onclick="openAppointLeaderModal()" class="px-3.5 py-2 bg-blue-900 hover:bg-blue-800 text-white font-bold rounded-xl text-xs whitespace-nowrap shadow-sm transition flex items-center space-x-1.5 self-start sm:self-auto">
+                    <span>+</span>
+                    <span>Appoint Unit Leader</span>
+                </button>
+                {% endif %}
+            </div>
+
+            <!-- Existing Leaders List (Cards) -->
+            <div class="space-y-3">
+                {% if unit_leaders %}
+                    {% for l in unit_leaders %}
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl hover:bg-white hover:shadow-sm transition">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200/80 mb-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="{% if l.gender == 'MALE' %}bg-blue-100 text-blue-900{% else %}bg-emerald-100 text-emerald-900{% endif %} text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                                        {{ l.get_role_display }}
+                                    </span>
+                                    <span class="bg-blue-100 text-blue-900 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                        Sanctioned
+                                    </span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button type="button" onclick="openSchoolLeaderEditModal('{{ l.id }}', '{{ l.name|escapejs }}', '{{ l.role }}', '{{ l.gender }}', '{{ l.designation|default:''|escapejs }}', '{{ l.mobile|default:'' }}', '{{ l.email|default:'' }}', '{{ l.uniform_size|default:'' }}', '{{ l.shoe_size|default:'' }}', '{{ l.height_cm|default:'' }}', '{{ l.chest_bust|default:'' }}', '{{ l.waist|default:'' }}', '{{ l.neck|default:'' }}', '{{ l.shoulder|default:'' }}', '{{ l.sleeve|default:'' }}', '{{ l.top_length|default:'' }}', '{{ l.bottom_length|default:'' }}', '{{ l.hip|default:'' }}')" class="px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-lg text-xs shadow-sm transition flex items-center space-x-1">
+                                        <span>✏️</span>
+                                        <span>Edit Leader Details</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                <div>
+                                    <div class="text-[11px] text-slate-500 font-medium">Teacher Full Name</div>
+                                    <div class="font-bold text-slate-900 text-sm mt-0.5">{{ l.name }}</div>
+                                </div>
+                                <div>
+                                    <div class="text-[11px] text-slate-500 font-medium">School Designation</div>
+                                    <div class="font-semibold text-slate-800 mt-0.5">{{ l.designation|default:"Teacher" }}</div>
+                                </div>
+                                <div>
+                                    <div class="text-[11px] text-slate-500 font-medium">Official Mobile & Email</div>
+                                    <div class="font-mono font-bold text-blue-900 mt-0.5">📞 {{ l.mobile|default:"Not Provided" }}</div>
+                                    {% if l.email %}<div class="text-[11px] text-slate-500 mt-0.5">✉️ {{ l.email }}</div>{% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Uniform Sizing & Tailoring Measurements -->
+                            <div class="mt-3 pt-2.5 border-t border-slate-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Uniform & Tailoring Measurements</span>
+                                    <button type="button" onclick="openSchoolLeaderEditModal('{{ l.id }}', '{{ l.name|escapejs }}', '{{ l.role }}', '{{ l.gender }}', '{{ l.designation|default:''|escapejs }}', '{{ l.mobile|default:'' }}', '{{ l.email|default:'' }}', '{{ l.uniform_size|default:'' }}', '{{ l.shoe_size|default:'' }}', '{{ l.height_cm|default:'' }}', '{{ l.chest_bust|default:'' }}', '{{ l.waist|default:'' }}', '{{ l.neck|default:'' }}', '{{ l.shoulder|default:'' }}', '{{ l.sleeve|default:'' }}', '{{ l.top_length|default:'' }}', '{{ l.bottom_length|default:'' }}', '{{ l.hip|default:'' }}')" class="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold rounded-lg border border-blue-200 text-[11px] transition">
+                                        ✏️ Edit Measurements
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] bg-white p-2.5 rounded-lg border border-slate-200/80">
+                                    <div><span class="text-slate-500">Uniform Size:</span> <b class="text-blue-900">{% if l.uniform_size %}Size {{ l.uniform_size }}{% else %}—{% endif %}</b></div>
+                                    <div><span class="text-slate-500">Shoe Size:</span> <b class="text-slate-800">{% if l.shoe_size %}Size {{ l.shoe_size }}{% else %}—{% endif %}</b></div>
+                                    <div><span class="text-slate-500">Height:</span> <b class="text-slate-800">{% if l.height_cm %}{{ l.height_cm }} cm{% else %}—{% endif %}</b></div>
+                                    <div><span class="text-slate-500">{% if l.gender == 'MALE' %}Chest{% else %}Bust{% endif %}:</span> <b class="text-slate-800">{% if l.chest_bust %}{{ l.chest_bust }}"{% else %}—{% endif %}</b></div>
+                                    <div><span class="text-slate-500">Waist:</span> <b class="text-slate-800">{% if l.waist %}{{ l.waist }}"{% else %}—{% endif %}</b></div>
+                                    <div><span class="text-slate-500">Shoulder:</span> <b class="text-slate-800">{% if l.shoulder %}{{ l.shoulder }}"{% else %}—{% endif %}</b></div>
+                                    {% if l.gender == 'MALE' and l.neck %}
+                                    <div><span class="text-slate-500">Neck:</span> <b class="text-slate-800">{{ l.neck }}"</b></div>
+                                    {% endif %}
+                                    <div><span class="text-slate-500">Sleeve:</span> <b class="text-slate-800">{% if l.sleeve %}{{ l.sleeve }}"{% else %}—{% endif %}</b></div>
+                                    <div><span class="text-slate-500">{% if l.gender == 'MALE' %}Shirt Length{% else %}Kameez Length{% endif %}:</span> <b class="text-slate-800">{% if l.top_length %}{{ l.top_length }}"{% else %}—{% endif %}</b></div>
+                                    <div><span class="text-slate-500">{% if l.gender == 'MALE' %}Pant Length{% else %}Salwar Length{% endif %}:</span> <b class="text-slate-800">{% if l.bottom_length %}{{ l.bottom_length }}"{% else %}—{% endif %}</b></div>
+                                    {% if l.gender == 'FEMALE' and l.hip %}
+                                    <div><span class="text-slate-500">Hip:</span> <b class="text-slate-800">{{ l.hip }}"</b></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="p-6 bg-slate-50 text-slate-500 rounded-xl text-center text-xs border border-dashed border-slate-300">
+                        <div class="text-2xl mb-1">📋</div>
+                        <div class="font-semibold text-slate-700">No Unit Leaders Assigned Yet</div>
+                        <div class="mt-1">Click the "Appoint Unit Leader" button above to assign a teacher leader for your school unit.</div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Contact District Office for Amendments -->
+            <div class="pt-3 border-t border-slate-100 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <span>To request teacher replacement or transfer updates:</span>
+                <a href="{% url 'contact' %}" class="font-bold text-blue-700 hover:underline">
+                    Contact Sangareddy BSG Office →
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: EXCEL IMPORT                                             -->
+<!-- ============================================================== -->
+<div id="importExcelModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full">
+        <div class="p-5 bg-blue-900 text-white flex items-center justify-between rounded-t-2xl">
+            <h3 class="font-bold text-base">Bulk Excel Upload</h3>
+            <button type="button" onclick="closeModal('importExcelModal')" class="text-slate-300 hover:text-white font-bold text-xl">&times;</button>
+        </div>
+
+        <form method="POST" action="{% url 'import_excel' %}" enctype="multipart/form-data" class="p-6 space-y-4">
+            {% csrf_token %}
+            <div class="p-4 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900">
+                <div class="font-bold mb-1">📋 Transactional Rules:</div>
+                <ul class="list-disc list-inside space-y-0.5 text-[11px]">
+                    <li>Upload the exact template downloaded for your school.</li>
+                    <li>Required fields marked with <span class="text-red-600 font-bold">*</span> must not be empty.</li>
+                    <li>All-or-nothing: if any row has errors, nothing is imported and row numbers are reported.</li>
+                    <li>Re-uploading is idempotent and safe (existing students won't be duplicated).</li>
+                </ul>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">Select Excel Workbook (.xlsx) <span class="text-red-500">*</span></label>
+                <input type="file" name="excel_file" accept=".xlsx,.xlsm" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" required>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-3">
+                <button type="button" onclick="closeModal('importExcelModal')" class="px-4 py-2 text-xs font-semibold text-slate-600">Cancel</button>
+                <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow">Start Transactional Import</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: UNIT LEADER EDIT / APPOINTMENT & TAILORING MEASUREMENTS -->
+<!-- ============================================================== -->
+<div id="leaderMeasurementModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-5 bg-blue-950 text-white flex items-center justify-between rounded-t-2xl">
+            <div>
+                <h3 class="font-bold text-base flex items-center space-x-2">
+                    <span>👔</span>
+                    <span id="leader_meas_title">Edit Unit Leader Information</span>
+                </h3>
+                <p class="text-xs text-blue-200 mt-0.5" id="leader_meas_subtitle">Update teacher details and uniform tailoring specs</p>
+            </div>
+            <button type="button" onclick="closeModal('leaderMeasurementModal')" class="text-slate-300 hover:text-white font-bold text-xl">&times;</button>
+        </div>
+
+        <form id="leader_measurement_form" method="POST" action="{% url 'save_leader' %}" class="p-6 space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="school_id" value="{{ school.id }}">
+            <input type="hidden" name="leader_id" id="lm_leader_id">
+
+            <!-- Teacher Official Information -->
+            <div class="space-y-3">
+                <div class="text-xs font-bold text-blue-900 uppercase tracking-wider">
+                    Teacher Official Information
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Role <span class="text-red-500">*</span></label>
+                        <select name="role" id="lm_role" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" onchange="syncGenderFromRole(this.value)" required>
+                            {% for role_code, role_label in leader_role_choices %}
+                                {% if role_code in allowed_leader_roles %}
+                                    <option value="{{ role_code }}">{{ role_label }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Teacher Full Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="name" id="lm_name" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900" required placeholder="e.g. K. Satyanarayana">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Gender <span class="text-red-500">*</span></label>
+                        <select name="gender" id="lm_gender" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" onchange="handleGenderSwitch(this.value)" required>
+                            <option value="MALE">Male</option>
+                            <option value="FEMALE">Female</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Designation</label>
+                        <input type="text" name="designation" id="lm_designation" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" placeholder="e.g. SA (Physical Science)">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Official Mobile</label>
+                        <input type="tel" name="mobile" id="lm_mobile" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" placeholder="10-digit mobile">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Teacher Email Address</label>
+                    <input type="email" name="email" id="lm_email" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" placeholder="e.g. teacher@gmail.com">
+                </div>
+            </div>
+
+            <!-- Uniform Sizing & Shoe Size -->
+            <div class="pt-3 border-t border-slate-200 space-y-3">
+                <div class="text-xs font-bold text-blue-900 uppercase tracking-wider">
+                    Uniform Sizing & Height
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Uniform Size</label>
+                        <select name="uniform_size" id="lm_uniform_size" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-blue-900">
+                            <option value="">Select Size</option>
+                            <option value="36">Size 36 (XS)</option>
+                            <option value="38">Size 38 (S)</option>
+                            <option value="40">Size 40 (M)</option>
+                            <option value="42">Size 42 (L)</option>
+                            <option value="44">Size 44 (XL)</option>
+                            <option value="46">Size 46 (XXL)</option>
+                            <option value="48">Size 48 (3XL)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Shoe Size</label>
+                        <select name="shoe_size" id="lm_shoe_size" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-800">
+                            <option value="">Select Shoe</option>
+                            <option value="5">Size 5</option>
+                            <option value="6">Size 6</option>
+                            <option value="7">Size 7</option>
+                            <option value="8">Size 8</option>
+                            <option value="9">Size 9</option>
+                            <option value="10">Size 10</option>
+                            <option value="11">Size 11</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Height (cm)</label>
+                        <input type="number" step="0.5" name="height_cm" id="lm_height_cm" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" placeholder="e.g. 165">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tailoring Specifications -->
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                <div class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center justify-between">
+                    <span>Tailoring Measurements (Inches)</span>
+                    <span class="text-[10px] text-slate-500 font-normal">0.5 increments accepted</span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-600 block font-bold" id="lm_chest_bust_lbl">Chest / Bust</label>
+                        <input type="number" step="0.5" name="chest_bust" id="lm_chest_bust" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="e.g. 38">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-600 block font-bold">Waist</label>
+                        <input type="number" step="0.5" name="waist" id="lm_waist" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="e.g. 32">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-600 block font-bold">Shoulder</label>
+                        <input type="number" step="0.5" name="shoulder" id="lm_shoulder" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="e.g. 18">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-600 block font-bold">Sleeve</label>
+                        <input type="number" step="0.5" name="sleeve" id="lm_sleeve" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="e.g. 24">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div id="lm_neck_box">
+                        <label class="text-[10px] text-slate-600 block font-bold">Neck</label>
+                        <input type="number" step="0.5" name="neck" id="lm_neck" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="e.g. 15.5">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-600 block font-bold" id="lm_top_lbl">Shirt Length</label>
+                        <input type="number" step="0.5" name="top_length" id="lm_top_length" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="e.g. 29">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-600 block font-bold" id="lm_bot_lbl">Pant Length</label>
+                        <input type="number" step="0.5" name="bottom_length" id="lm_bottom_length" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="e.g. 40">
+                    </div>
+                    <div id="lm_hip_box" class="hidden">
+                        <label class="text-[10px] text-slate-600 block font-bold">Hip</label>
+                        <input type="number" step="0.5" name="hip" id="lm_hip" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="e.g. 38">
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-3">
+                <button type="button" onclick="closeModal('leaderMeasurementModal')" class="px-4 py-2 text-xs font-semibold text-slate-600">Cancel</button>
+                <button type="submit" class="px-5 py-2.5 bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold rounded-xl shadow">Save Unit Leader Information</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

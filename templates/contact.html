@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contact District Office &amp; Help Desk | Bharat Scouts &amp; Guides Sangareddy{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto my-6 space-y-6">
+    <!-- Header Banner -->
+    <div class="bg-gradient-to-br from-blue-950 via-blue-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 shadow-md">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <span class="inline-flex items-center space-x-1 px-3 py-1 bg-amber-400 text-blue-950 rounded-full text-xs font-black uppercase tracking-wider">
+                    <span>⚜</span>
+                    <span>District Headquarters &amp; Help Desk</span>
+                </span>
+                <h1 class="text-2xl sm:text-3xl font-black mt-2 tracking-tight">Sangareddy District BSG Association</h1>
+                <p class="text-xs sm:text-sm text-blue-200 mt-1">
+                    Department of School Education · Government of Telangana
+                </p>
+            </div>
+            <a href="https://www.instagram.com/bsg_sangareddy?utm_source=qr&gwpx=bW53cGNkMHJqMDRz" target="_blank" rel="noopener noreferrer" class="px-4 py-2 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-bold text-xs rounded-xl shadow transition self-start sm:self-center flex items-center space-x-1.5">
+                <span>📸</span>
+                <span>@bsg_sangareddy</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- PRIMARY CONTACT: DISTRICT SECRETARY & PORTAL ADMIN -->
+    <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl p-6 border-2 border-amber-300 shadow-md">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="space-y-2">
+                <div class="flex items-center space-x-2">
+                    <span class="px-2.5 py-0.5 bg-amber-500 text-slate-950 font-black text-[10px] uppercase tracking-wider rounded-md">
+                        Executive Head &amp; Portal Administrator
+                    </span>
+                    <span class="text-xs text-amber-900 font-bold">Official Help Desk Authority</span>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-black text-slate-950">
+                    Sri Vancha Madhava Reddy
+                </h2>
+                <div class="text-xs font-bold text-amber-950">
+                    District Secretary, The Bharat Scouts &amp; Guides, Sangareddy
+                </div>
+                <p class="text-xs text-slate-700 leading-relaxed max-w-xl">
+                    <strong>Note:</strong> The District Administrator of this portal is the <strong>District Secretary himself (Sri Vancha Madhava Reddy)</strong>. All institutional school sanctions, password resets, quota modifications, and uniform supply consolidation are administered directly by him.
+                </p>
+            </div>
+
+            <!-- Call / Contact Badge -->
+            <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm flex flex-col items-center justify-center text-center space-y-1 min-w-[200px]">
+                <span class="text-2xl">📞</span>
+                <span class="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Direct Helpline</span>
+                <a href="tel:+919440069750" class="text-base sm:text-lg font-mono font-black text-blue-900 hover:text-blue-700 hover:underline">
+                    +91 94400 69750
+                </a>
+                <span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    Official Mobile &amp; WhatsApp
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- DIGNITARIES & OFFICE DETAILS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <!-- Physical Office -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-900 flex items-center justify-center font-bold text-lg">
+                📍
+            </div>
+            <h3 class="font-bold text-slate-900 text-sm">District Office Address</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+                <strong>Bharat Scouts &amp; Guides Sangareddy District Association</strong><br/>
+                O/o District Educational Officer (DEO),<br/>
+                Collectorate Complex, Degloor-Hyderabad Road,<br/>
+                Sangareddy, Telangana - 502001
+            </p>
+            <div class="pt-2 text-[11px] text-slate-500">
+                <strong>Office Timings:</strong> Monday – Saturday: 10:00 AM – 5:00 PM (Closed on Government Holidays)
+            </div>
+        </div>
+
+        <!-- Social Media Card with QR Code -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="w-10 h-10 rounded-xl bg-pink-100 text-pink-700 flex items-center justify-center font-bold text-lg">
+                        📸
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-sm">Official Instagram</h3>
+                        <p class="text-[11px] text-slate-500">Scan or Click to Connect</p>
+                    </div>
+                </div>
+                <a href="https://www.instagram.com/bsg_sangareddy?utm_source=qr&gwpx=bW53cGNkMHJqMDRz" target="_blank" rel="noopener noreferrer" class="text-xs text-pink-700 font-bold hover:underline">
+                    @bsg_sangareddy →
+                </a>
+            </div>
+
+            <div class="flex items-center space-x-4 pt-1">
+                <img src="{% static 'images/bsg_instagram_qr.jpg' %}" alt="BSG Sangareddy Instagram QR" class="w-20 h-20 rounded-xl object-contain border border-slate-200 shadow-sm">
+                <div class="text-xs text-slate-600 space-y-1">
+                    <div class="font-mono font-bold text-slate-900">@bsg_sangareddy</div>
+                    <p class="text-[11px] text-slate-500">
+                        Follow for official rallies, summer camps, president awards, and scouts &amp; guides activities in Sangareddy.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DISTRICT COMMISSIONERS & PATRONS -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4">
+        <h3 class="font-bold text-slate-900 text-sm flex items-center space-x-2">
+            <span>🏛️</span>
+            <span>District Association Key Officials</span>
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                <span class="text-[10px] uppercase font-bold text-blue-900 bg-blue-100 px-2 py-0.5 rounded">President</span>
+                <div class="font-bold text-slate-900 text-sm pt-1">Sri Prateek Jain, I.A.S.</div>
+                <div class="text-slate-500">District Collector &amp; President BSG, Sangareddy</div>
+            </div>
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                <span class="text-[10px] uppercase font-bold text-emerald-900 bg-emerald-100 px-2 py-0.5 rounded">Chief Commissioner</span>
+                <div class="font-bold text-slate-900 text-sm pt-1">Smt. R. Rohini Garu</div>
+                <div class="text-slate-500">District Educational Officer (DEO), Sangareddy</div>
+            </div>
+            <div class="p-4 bg-amber-50/70 rounded-xl border border-amber-200 space-y-1">
+                <span class="text-[10px] uppercase font-bold text-amber-950 bg-amber-200 px-2 py-0.5 rounded">Secretary &amp; Administrator</span>
+                <div class="font-bold text-slate-950 text-sm pt-1">Sri Vancha Madhava Reddy</div>
+                <div class="text-slate-700 font-mono font-bold">+91 94400 69750</div>
+            </div>
+            <div class="p-4 bg-purple-50/70 rounded-xl border border-purple-200 space-y-1">
+                <span class="text-[10px] uppercase font-bold text-purple-950 bg-purple-200 px-2 py-0.5 rounded">District Treasurer</span>
+                <div class="font-bold text-slate-950 text-sm pt-1">Sri G. Sunder Rao</div>
+                <div class="text-slate-700 font-mono font-bold">+91 94913 57773</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

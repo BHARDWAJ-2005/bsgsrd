@@ -1,0 +1,910 @@
+{% extends 'base.html' %}
+
+{% block title %}District Command Center | BSG Sangareddy{% endblock %}
+
+{% block main_width %}max-w-[1536px]{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- District Command Header Banner -->
+    <div class="bg-gradient-to-r from-blue-950 via-blue-900 to-slate-900 text-white rounded-2xl p-6 sm:p-7 shadow-lg">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+                <span class="inline-flex items-center gap-1.5 bg-emerald-500 text-slate-950 text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest">
+                    <span class="inline-block w-1.5 h-1.5 rounded-full bg-slate-900 animate-pulse"></span>
+                    District Administrator Portal
+                </span>
+                <h1 class="text-2xl sm:text-3xl font-black mt-2 tracking-tight">
+                    Sangareddy District Command Center
+                </h1>
+                <p class="text-xs sm:text-sm text-blue-200 mt-1 max-w-xl">
+                    District-scale enrollment tracking, quota allocations, password resets, and uniform supply consolidation.
+                </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Downloads group -->
+                <div class="inline-flex rounded-xl overflow-hidden shadow-md">
+                    <button type="button" onclick="openModal('quickSchoolExcelModal')" class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-extrabold border-r border-emerald-500/40 transition" title="Download a specific school's complete Excel workbook">
+                        📥 School Excel
+                    </button>
+                    <a href="{% url 'district_export_excel' %}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-bold transition" title="Download master district-wide consolidated workbook">
+                        📊 District Excel
+                    </a>
+                </div>
+                <!-- Password & School -->
+                <button type="button" onclick="openQuickPasswordModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold rounded-xl shadow-md transition">
+                    🔑 Change Password
+                </button>
+                <button type="button" onclick="openModal('addSchoolModal')" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold rounded-xl shadow transition border border-blue-500/50">
+                    🏛️ + Add School
+                </button>
+            </div>
+        </div>
+
+        <!-- Overall KPI Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-6 pt-5 border-t border-blue-800/60">
+            <div class="bg-blue-900/60 p-4 rounded-xl border border-blue-700/50 hover:bg-blue-900/80 transition">
+                <div class="text-[11px] text-blue-300 font-semibold uppercase tracking-widest mb-1">Mandals</div>
+                <div class="text-2xl font-black text-white font-mono">{{ mandals.count }}</div>
+                <div class="text-[10px] text-blue-400 mt-0.5">Administrative blocks</div>
+            </div>
+            <div class="bg-blue-900/60 p-4 rounded-xl border border-blue-700/50 hover:bg-blue-900/80 transition">
+                <div class="text-[11px] text-blue-300 font-semibold uppercase tracking-widest mb-1">Schools</div>
+                <div class="text-2xl font-black text-white font-mono">{{ total_schools }}</div>
+                <div class="text-[10px] text-blue-400 mt-0.5">Sanctioned units</div>
+            </div>
+            <div class="bg-blue-900/60 p-4 rounded-xl border border-blue-700/50 hover:bg-blue-900/80 transition">
+                <div class="text-[11px] text-blue-300 font-semibold uppercase tracking-widest mb-1">Scouts (Boys)</div>
+                <div class="text-2xl font-black text-amber-300 font-mono">{{ total_boys_enr }} <span class="text-sm font-normal text-blue-400">/ {{ total_boys_q }}</span></div>
+                <div class="w-full bg-blue-800/60 rounded-full h-1 mt-2">
+                    <div class="bg-amber-400 h-1 rounded-full transition-all" style="width: {% if total_boys_q > 0 %}{{ total_boys_enr|floatformat:0 }}{% else %}0{% endif %}%"></div>
+                </div>
+            </div>
+            <div class="bg-blue-900/60 p-4 rounded-xl border border-blue-700/50 hover:bg-blue-900/80 transition">
+                <div class="text-[11px] text-blue-300 font-semibold uppercase tracking-widest mb-1">Guides (Girls)</div>
+                <div class="text-2xl font-black text-emerald-300 font-mono">{{ total_girls_enr }} <span class="text-sm font-normal text-blue-400">/ {{ total_girls_q }}</span></div>
+                <div class="w-full bg-blue-800/60 rounded-full h-1 mt-2">
+                    <div class="bg-emerald-400 h-1 rounded-full transition-all" style="width: {% if total_girls_q > 0 %}{{ total_girls_enr|floatformat:0 }}{% else %}0{% endif %}%"></div>
+                </div>
+            </div>
+            <div class="bg-blue-900/60 p-4 rounded-xl border border-blue-700/50 col-span-2 sm:col-span-1 hover:bg-blue-900/80 transition">
+                <div class="text-[11px] text-blue-300 font-semibold uppercase tracking-widest mb-1">Overall Progress</div>
+                <div class="text-2xl font-black text-emerald-400 font-mono">{{ overall_pct }}%</div>
+                <div class="w-full bg-blue-800/60 rounded-full h-1 mt-2">
+                    <div class="bg-emerald-400 h-1 rounded-full transition-all" style="width: {{ overall_pct }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. MANDAL-WISE PROGRESS BREAKDOWN -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+        <h2 class="text-base font-bold text-slate-900 mb-3 flex items-center justify-between">
+            <span>Mandal-Wise Progress Breakdown</span>
+            <span class="text-xs text-slate-500 font-normal">Real-time quota tracking per administrative block</span>
+        </h2>
+
+        <div class="overflow-x-auto border border-slate-200 rounded-xl">
+            <table class="w-full text-left text-xs">
+                <thead>
+                    <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                        <th class="py-2.5 px-3">Mandal Name</th>
+                        <th class="py-2.5 px-3 text-center">Schools</th>
+                        <th class="py-2.5 px-3 text-center">Boys (Enr / Quota)</th>
+                        <th class="py-2.5 px-3 text-center">Girls (Enr / Quota)</th>
+                        <th class="py-2.5 px-3 text-center">Total Enrolled</th>
+                        <th class="py-2.5 px-3 text-center">Progress %</th>
+                        <th class="py-2.5 px-3 text-center w-36">Progress Bar</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for m in mandal_stats %}
+                    <tr class="table-row-hover">
+                        <td class="py-2.5 px-3 font-bold text-blue-900">
+                            <a href="?mandal_id={{ m.mandal.id }}" class="hover:underline">{{ m.mandal.name }}</a>
+                        </td>
+                        <td class="py-2.5 px-3 text-center font-mono">{{ m.school_count }}</td>
+                        <td class="py-2.5 px-3 text-center font-mono text-blue-800">{{ m.boys_enrolled }} / {{ m.boys_quota }}</td>
+                        <td class="py-2.5 px-3 text-center font-mono text-emerald-800">{{ m.girls_enrolled }} / {{ m.girls_quota }}</td>
+                        <td class="py-2.5 px-3 text-center font-mono font-bold">{{ m.total_enrolled }} / {{ m.total_quota }}</td>
+                        <td class="py-2.5 px-3 text-center font-mono font-bold">{{ m.pct }}%</td>
+                        <td class="py-2.5 px-3">
+                            <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: {{ m.pct }}%"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 2. SCHOOL DIRECTORY & MANAGEMENT -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-4 sm:p-5 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            <div>
+                <h3 class="font-black text-sm text-slate-900 flex items-center gap-2"><span class="inline-block w-2 h-2 rounded-full bg-blue-600"></span>District School Master Directory</h3>
+                <p class="text-xs text-slate-500 mt-0.5">Download workbooks, reset passwords, manage quotas &amp; unit leaders for all sanctioned schools.</p>
+            </div>
+
+            <!-- Search and Filter Form -->
+            <form method="GET" class="flex flex-wrap items-center gap-2">
+                <input type="text" name="q" value="{{ q }}" placeholder="Search school name or UDISE..." class="pl-3 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs w-52 sm:w-64 focus:ring-2 focus:ring-blue-500 outline-none transition">
+
+                <select name="mandal_id" onchange="this.form.submit()" class="px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs">
+                    <option value="">All Mandals</option>
+                    {% for m in mandals %}
+                        <option value="{{ m.id }}" {% if selected_mandal == m.id|stringformat:"i" %}selected{% endif %}>{{ m.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <button type="submit" class="px-3 py-1.5 bg-blue-700 text-white rounded-lg text-xs font-semibold">Filter</button>
+                {% if q or selected_mandal %}
+                    <a href="{% url 'district_dashboard' %}" class="inline-flex items-center px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs transition">&#10005; Clear</a>
+                {% endif %}
+            </form>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead>
+                    <tr class="bg-slate-100 text-slate-600 font-bold border-b-2 border-slate-200">
+                        <th class="py-3 px-3.5 whitespace-nowrap w-28">UDISE Code</th>
+                        <th class="py-3 px-3 min-w-[200px]">School Name</th>
+                        <th class="py-3 px-3 whitespace-nowrap w-28">Mandal</th>
+                        <th class="py-3 px-3 whitespace-nowrap w-36">Category</th>
+                        <th class="py-3 px-2 text-center whitespace-nowrap w-24">Boys<span class="block text-[10px] font-normal text-slate-500">Enr / Quota</span></th>
+                        <th class="py-3 px-2 text-center whitespace-nowrap w-24">Girls<span class="block text-[10px] font-normal text-slate-500">Enr / Quota</span></th>
+                        <th class="py-3 px-2 text-center whitespace-nowrap w-24">Password</th>
+                        <th class="py-3 px-3.5 text-right whitespace-nowrap min-w-[280px]">Admin Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in schools %}
+                    <tr class="{% if forloop.counter|divisibleby:2 %}bg-slate-50/60{% else %}bg-white{% endif %} hover:bg-blue-50/60 transition-colors border-b border-slate-100">
+                        <td class="py-3 px-3.5 font-mono font-bold text-slate-800 whitespace-nowrap">
+                            <span class="bg-slate-100 px-2 py-1 rounded border border-slate-200 text-[11px]">{{ s.udise_code }}</span>
+                        </td>
+                        <td class="py-3 px-3">
+                            <div class="font-bold text-slate-900 leading-snug">{{ s.name }}</div>
+                            <div class="text-[10px] text-slate-500 flex flex-wrap items-center gap-1.5 mt-0.5">
+                                {% if s.headmaster_name %}<span class="text-slate-600 font-medium">HM: {{ s.headmaster_name }}</span> · {% endif %}
+                                <span class="bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded text-[9px]">✓ Sanctioned</span>
+                                <span class="text-slate-400 font-mono text-[9px]">{{ s.sanction_order_number }}</span>
+                            </div>
+                        </td>
+                        <td class="py-3 px-3 whitespace-nowrap">
+                            <span class="font-medium text-slate-700">{{ s.mandal.name }}</span>
+                        </td>
+                        <td class="py-3 px-3 whitespace-nowrap">
+                            {% if s.school_type == 'COED_HIGH' %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/70" title="Co-ed High School (Classes 6-10)">Co-ed High (6-10)</span>
+                            {% elif s.school_type == 'BOYS_HIGH' %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/70" title="Boys High School (Classes 6-10)">Boys High (6-10)</span>
+                            {% elif s.school_type == 'GIRLS_HIGH' %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-pink-50 text-pink-700 border border-pink-200/70" title="Girls High School (Classes 6-10)">Girls High (6-10)</span>
+                            {% elif s.school_type == 'COED_UP' %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200/70" title="Co-ed Upper Primary (Classes 6-8)">Co-ed UP (6-8)</span>
+                            {% elif s.school_type == 'BOYS_UP' %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200/70" title="Boys Upper Primary (Classes 6-8)">Boys UP (6-8)</span>
+                            {% elif s.school_type == 'GIRLS_UP' %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/70" title="Girls Upper Primary (Classes 6-8)">Girls UP (6-8)</span>
+                            {% elif s.school_type == 'PRIMARY' %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/70" title="Primary School (Classes 3-5 Cub/Bulbul)">Primary (3-5)</span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700">{{ s.get_school_type_display|truncatechars:20 }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-2 text-center font-mono whitespace-nowrap text-xs">
+                            <span class="font-bold text-blue-900">{{ s.boys_enrolled_count }}</span> <span class="text-slate-400 font-normal">/</span> <span class="text-slate-600">{{ s.boys_quota }}</span>
+                        </td>
+                        <td class="py-3 px-2 text-center font-mono whitespace-nowrap text-xs">
+                            <span class="font-bold text-emerald-900">{{ s.girls_enrolled_count }}</span> <span class="text-slate-400 font-normal">/</span> <span class="text-slate-600">{{ s.girls_quota }}</span>
+                        </td>
+                        <td class="py-3 px-2 text-center whitespace-nowrap">
+                            {% if s.must_change_password %}
+                                <span class="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200" title="Default password not yet changed by school">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                    Default
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200" title="School has set custom password">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    Updated
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-3.5 text-right whitespace-nowrap">
+                            <div class="inline-flex items-center gap-1.5 justify-end">
+                                <!-- Downloads Segment -->
+                                <div class="inline-flex rounded-lg shadow-xs border border-slate-200 bg-white overflow-hidden">
+                                    <a href="{% url 'district_export_school_excel' s.udise_code %}" class="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-[11px] border-r border-slate-200 transition" title="Download complete School Excel workbook (.xlsx)">
+                                        <span>📥</span><span>Excel</span>
+                                    </a>
+                                    <a href="{% url 'district_export_school_pdf' s.udise_code %}" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold text-[11px] transition" title="Download certified School PDF roster">
+                                        <span>📄</span><span>PDF</span>
+                                    </a>
+                                </div>
+
+                                <!-- Unit Leaders -->
+                                <button type="button" onclick="openAdminLeaderModal({{ s.id }}, '{{ s.name|escapejs }}')" class="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-lg border border-slate-300 text-[11px] shadow-xs transition" title="Manage Unit Leaders (Scout Master / Guide Captain)">
+                                    <span>👔</span><span>Leaders</span><span class="bg-slate-600 text-white text-[9px] font-bold px-1.5 rounded-full ml-0.5">{{ s.unit_leaders.count }}</span>
+                                </button>
+
+                                <!-- Password -->
+                                <button type="button" onclick="openResetPasswordModal('{{ s.udise_code }}', '{{ s.name|escapejs }}')" class="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold rounded-lg border border-amber-200 text-[11px] shadow-xs transition" title="Change / Reset School Password">
+                                    <span>🔑</span><span>Password</span>
+                                </button>
+
+                                <!-- Quota -->
+                                <button type="button" onclick="openEditQuotaModal('{{ s.udise_code }}', '{{ s.name|escapejs }}', {{ s.boys_quota }}, {{ s.girls_quota }})" class="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-800 font-semibold rounded-lg border border-blue-200 text-[11px] shadow-xs transition" title="Edit Boys & Girls Quota Allocations">
+                                    <span>⚙️</span><span>Quotas</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="py-8 text-center text-slate-400">No schools matching your search criteria.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. AUDIT LOG (Child Data Protection & Security Tracking) -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+        <h3 class="font-bold text-sm text-slate-900 mb-1">District Security & Audit Trail</h3>
+        <p class="text-xs text-slate-500 mb-3">Logs child record modifications, password changes, and administrative actions.</p>
+
+        <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-72 overflow-y-auto">
+            <table class="w-full text-left text-xs">
+                <thead>
+                    <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 sticky top-0">
+                        <th class="py-2.5 px-3">Timestamp</th>
+                        <th class="py-2.5 px-3">Action</th>
+                        <th class="py-2.5 px-3">Target</th>
+                        <th class="py-2.5 px-3">User / School</th>
+                        <th class="py-2.5 px-3">Description</th>
+                        <th class="py-2.5 px-3">IP Address</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for a in audit_logs %}
+                    <tr class="hover:bg-slate-50 text-[11px]">
+                        <td class="py-2 px-3 font-mono text-slate-500">{{ a.created_at|date:"d-M H:i:s" }}</td>
+                        <td class="py-2 px-3 font-bold text-blue-900">{{ a.action }}</td>
+                        <td class="py-2 px-3 text-slate-600">{{ a.target_type }}</td>
+                        <td class="py-2 px-3 font-medium text-slate-800">
+                            {% if a.school %}{{ a.school.name|truncatechars:20 }}{% else %}{{ a.user.username|default:"System" }}{% endif %}
+                        </td>
+                        <td class="py-2 px-3 text-slate-700">{{ a.description }}</td>
+                        <td class="py-2 px-3 font-mono text-slate-400">{{ a.ip_address|default:"local" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="py-4 text-center text-slate-400">No audit logs recorded yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- RESET PASSWORD MODAL (Row-level) -->
+<div id="resetPasswordModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+            <div class="flex items-center space-x-2">
+                <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center text-base font-bold">🔑</span>
+                <div>
+                    <h3 class="font-bold text-base text-slate-900 leading-tight">Change School Password</h3>
+                    <p class="text-[11px] text-slate-500" id="reset_school_label">School Name</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeModal('resetPasswordModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+        </div>
+
+        <form id="reset_password_form" method="POST" action="" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs font-bold text-slate-700">New Password</label>
+                    <div class="space-x-1">
+                        <button type="button" onclick="setPresetPassword('reset_pw_input', 'BSG@Sangareddy2026')" class="text-[10px] text-blue-700 hover:underline font-semibold bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">Default</button>
+                        <button type="button" onclick="generateRandomPassword('reset_pw_input')" class="text-[10px] text-emerald-700 hover:underline font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">🎲 Generate</button>
+                    </div>
+                </div>
+                <div class="relative">
+                    <input type="text" id="reset_pw_input" name="new_password" value="BSG@Sangareddy2026" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono font-bold tracking-wide text-slate-800 pr-16 focus:ring-2 focus:ring-amber-500 focus:bg-white transition" required>
+                    <button type="button" onclick="copyInputText('reset_pw_input', this)" class="absolute right-1 top-1 bottom-1 px-2 text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded">Copy</button>
+                </div>
+                <p class="text-[10px] text-slate-500 mt-1">Official default: <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">BSG@Sangareddy2026</code></p>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                <label class="flex items-start space-x-2 text-xs text-amber-950 cursor-pointer">
+                    <input type="checkbox" name="must_change_password" value="1" checked class="mt-0.5 rounded text-amber-600 focus:ring-amber-500">
+                    <span>
+                        <strong class="font-bold">Require password change on first login</strong>
+                        <span class="block text-[11px] text-amber-800">Forces school to set their own password immediately upon login.</span>
+                    </span>
+                </label>
+            </div>
+
+            <div class="flex items-center justify-between pt-2">
+                <button type="button" onclick="copySchoolCredentials('reset_school_label', 'reset_pw_input', this)" class="text-xs text-blue-700 hover:text-blue-900 font-semibold">📋 Copy Full Credentials</button>
+                <div class="space-x-2">
+                    <button type="button" onclick="closeModal('resetPasswordModal')" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg shadow-sm">Save & Update</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- QUICK SCHOOL PASSWORD MODAL (Toolbar-level across all schools) -->
+<div id="quickPasswordModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-200">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+            <div class="flex items-center space-x-2">
+                <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-900 flex items-center justify-center text-base font-bold">🔑</span>
+                <div>
+                    <h3 class="font-bold text-base text-slate-900 leading-tight">Admin School Password Reset</h3>
+                    <p class="text-[11px] text-slate-500">Select any recognized school in Sangareddy District</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeModal('quickPasswordModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+        </div>
+
+        <form id="quick_password_form" method="POST" action="{% url 'district_reset_school_password_generic' %}" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Select School</label>
+                <select id="quick_school_select" name="udise_code" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" required onchange="updateQuickSchoolLabel()">
+                    <option value="">-- Choose School (Mandal · Name · UDISE) --</option>
+                    {% for sch in all_schools %}
+                    <option value="{{ sch.udise_code }}" data-name="{{ sch.name }}" data-mandal="{{ sch.mandal.name }}">
+                        [{{ sch.mandal.name }}] {{ sch.name }} (UDISE: {{ sch.udise_code }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs font-bold text-slate-700">New Password</label>
+                    <div class="space-x-1">
+                        <button type="button" onclick="setPresetPassword('quick_pw_input', 'BSG@Sangareddy2026')" class="text-[10px] text-blue-700 hover:underline font-semibold bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">Default</button>
+                        <button type="button" onclick="generateRandomPassword('quick_pw_input')" class="text-[10px] text-emerald-700 hover:underline font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">🎲 Generate</button>
+                    </div>
+                </div>
+                <div class="relative">
+                    <input type="text" id="quick_pw_input" name="new_password" value="BSG@Sangareddy2026" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono font-bold tracking-wide text-slate-800 pr-16 focus:ring-2 focus:ring-blue-500 focus:bg-white transition" required>
+                    <button type="button" onclick="copyInputText('quick_pw_input', this)" class="absolute right-1 top-1 bottom-1 px-2 text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded">Copy</button>
+                </div>
+                <p class="text-[10px] text-slate-500 mt-1">Default: <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">BSG@Sangareddy2026</code></p>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                <label class="flex items-start space-x-2 text-xs text-amber-950 cursor-pointer">
+                    <input type="checkbox" name="must_change_password" value="1" checked class="mt-0.5 rounded text-amber-600 focus:ring-amber-500">
+                    <span>
+                        <strong class="font-bold">Require password change on first login</strong>
+                        <span class="block text-[11px] text-amber-800">Forces school to set their own password immediately upon login.</span>
+                    </span>
+                </label>
+            </div>
+
+            <div class="flex items-center justify-between pt-2">
+                <button type="button" onclick="copyQuickCredentials(this)" class="text-xs text-blue-700 hover:text-blue-900 font-semibold">📋 Copy Full Credentials</button>
+                <div class="space-x-2">
+                    <button type="button" onclick="closeModal('quickPasswordModal')" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs rounded-lg shadow-sm">Confirm Password Update</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- QUICK SCHOOL EXCEL MODAL (Toolbar-level across all schools) -->
+<div id="quickSchoolExcelModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-200">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+            <div class="flex items-center space-x-2">
+                <span class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-900 flex items-center justify-center text-base font-bold">📥</span>
+                <div>
+                    <h3 class="font-bold text-base text-slate-900 leading-tight">Download School Excel Workbook</h3>
+                    <p class="text-[11px] text-slate-500">Download full enrollment & uniform measurement workbook of any school</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeModal('quickSchoolExcelModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+        </div>
+
+        <form method="GET" action="{% url 'district_export_school_excel_generic' %}" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Select School</label>
+                <select name="udise_code" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" required>
+                    <option value="">-- Choose School (Mandal · Name · UDISE) --</option>
+                    {% for sch in all_schools %}
+                    <option value="{{ sch.udise_code }}">
+                        [{{ sch.mandal.name }}] {{ sch.name }} (UDISE: {{ sch.udise_code }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <p class="text-[11px] text-slate-500 mt-1.5">
+                    Generates a complete multi-sheet workbook containing:
+                    <strong>Scouts (Boys)</strong>, <strong>Guides (Girls)</strong>, <strong>Unit Leaders</strong>, and <strong>Uniform Sizing Matrices</strong>.
+                </p>
+            </div>
+
+            <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+                <button type="button" onclick="closeModal('quickSchoolExcelModal')" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+                <button type="submit" class="inline-flex items-center px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg shadow-sm">
+                    📥 Download Workbook (.xlsx)
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- EDIT QUOTA MODAL -->
+<div id="editQuotaModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+        <h3 class="font-bold text-base text-slate-900 mb-1">Edit School Quotas</h3>
+        <p class="text-xs text-slate-500 mb-4" id="quota_school_label">School Name</p>
+
+        <form id="edit_quota_form" method="POST" action="" class="space-y-4">
+            {% csrf_token %}
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Boys Quota</label>
+                    <input type="number" min="0" max="100" id="modal_boys_quota" name="boys_quota" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Girls Quota</label>
+                    <input type="number" min="0" max="100" id="modal_girls_quota" name="girls_quota" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" required>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button type="button" onclick="closeModal('editQuotaModal')" class="px-3 py-1.5 text-xs text-slate-600">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs rounded-lg">Save Quotas</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ADD / SANCTION SCHOOL MODAL (District Admin Only) -->
+<div id="addSchoolModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-5 bg-blue-950 text-white flex items-center justify-between rounded-t-2xl">
+            <div>
+                <h3 class="font-bold text-base flex items-center space-x-2">
+                    <span>🏛️</span>
+                    <span>Add & Sanction New School (Admin Authorization)</span>
+                </h3>
+                <p class="text-xs text-blue-200 mt-0.5">
+                    Only Bharat Scouts & Guides Sanctioned Schools are registered in this portal.
+                </p>
+            </div>
+            <button type="button" onclick="closeModal('addSchoolModal')" class="text-slate-400 hover:text-white font-bold text-xl">&times;</button>
+        </div>
+
+        <form method="POST" action="{% url 'district_add_school' %}" class="p-6 space-y-4">
+            {% csrf_token %}
+            <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900">
+                <b>Admin Access Only:</b> Adding a school here officially sanctions the unit in Sangareddy District, creates the school's login credentials (default password <code class="font-mono font-bold">BSG@Sangareddy2026</code>), and records an entry in the District Security Audit Log.
+            </div>
+
+            <!-- School Details -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">11-digit UDISE Code <span class="text-red-500">*</span></label>
+                    <input type="text" name="udise_code" maxlength="11" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono font-bold" placeholder="e.g. 36162500..." required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Mandal <span class="text-red-500">*</span></label>
+                    <select name="mandal_id" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" required>
+                        {% for m in mandals %}
+                            <option value="{{ m.id }}">{{ m.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">School Full Name <span class="text-red-500">*</span></label>
+                <input type="text" name="name" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" placeholder="e.g. ZPHS KANDI" required>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">School Category</label>
+                    <select name="school_type" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs">
+                        {% for val, lbl in school_types %}
+                            <option value="{{ val }}">{{ lbl|truncatechars:32 }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Sanction Order / Ref Number</label>
+                    <input type="text" name="sanction_order_number" value="BSG/SRD/SANCTION/2026" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono">
+                </div>
+            </div>
+
+            <!-- Headmaster & Quotas -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Headmaster (HM) Name</label>
+                    <input type="text" name="headmaster_name" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" placeholder="HM Name">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">HM Contact Mobile</label>
+                    <input type="tel" name="contact_mobile" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" placeholder="10-digit mobile">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-700 mb-1">Boys Quota</label>
+                        <input type="number" name="boys_quota" value="32" class="w-full px-2 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-center font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-700 mb-1">Girls Quota</label>
+                        <input type="number" name="girls_quota" value="32" class="w-full px-2 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-center font-bold">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Designated Teacher Unit Leaders -->
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                <div class="text-xs font-bold text-blue-950 uppercase tracking-wider">Designated Teacher Unit Leaders (Optional)</div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] text-slate-700 font-semibold mb-0.5">Male Teacher (Scout / Cub Master)</label>
+                        <input type="text" name="male_teacher_name" class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="Teacher Name">
+                        <input type="tel" name="male_teacher_mobile" class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded text-xs mt-1" placeholder="Mobile Number">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-700 font-semibold mb-0.5">Female Teacher (Guide Captain / Flock Leader)</label>
+                        <input type="text" name="female_teacher_name" class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="Teacher Name">
+                        <input type="tel" name="female_teacher_mobile" class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded text-xs mt-1" placeholder="Mobile Number">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-3 border-t border-slate-100">
+                <button type="button" onclick="closeModal('addSchoolModal')" class="px-4 py-2 text-xs font-semibold text-slate-600">Cancel</button>
+                <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow">Confirm & Sanction School</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ADMIN MANAGE UNIT LEADERS MODAL -->
+<div id="adminLeaderModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-5 bg-slate-900 text-white flex items-center justify-between rounded-t-2xl">
+            <div>
+                <h3 class="font-bold text-base flex items-center space-x-2">
+                    <span>👔</span>
+                    <span>Admin Unit Leader Governance</span>
+                </h3>
+                <p class="text-xs text-slate-300 mt-0.5" id="admin_leader_school_name">School Name</p>
+            </div>
+            <button type="button" onclick="closeModal('adminLeaderModal')" class="text-slate-400 hover:text-white font-bold text-xl">&times;</button>
+        </div>
+
+        <div class="p-6 space-y-5">
+            <!-- Currently Assigned Leaders -->
+            <div>
+                <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Designated Unit Leaders</h4>
+                <div id="admin_leader_cards_container" class="space-y-2">
+                    <p class="text-xs text-slate-400">Loading leaders...</p>
+                </div>
+            </div>
+
+            <!-- Edit / Add Leader Form -->
+            <form method="POST" action="{% url 'save_leader' %}" class="pt-4 border-t border-slate-200 space-y-3">
+                {% csrf_token %}
+                <input type="hidden" name="school_id" id="admin_leader_school_id">
+                <input type="hidden" name="leader_id" id="admin_leader_id">
+
+                <h4 class="text-xs font-bold text-blue-900 uppercase tracking-wider" id="admin_leader_form_title">Assign / Edit Unit Leader</h4>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-700 mb-1">Role <span class="text-red-500">*</span></label>
+                        <select name="role" id="admin_leader_role" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" required>
+                            <option value="SCOUT_MASTER">Scout Master (Male, High School)</option>
+                            <option value="GUIDE_CAPTAIN">Guide Captain (Female, High School)</option>
+                            <option value="CUB_MASTER">Cub Master (Male, Primary)</option>
+                            <option value="FLOCK_LEADER">Flock Leader (Female, Primary)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-700 mb-1">Teacher Full Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="name" id="admin_leader_name" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-700 mb-1">Gender <span class="text-red-500">*</span></label>
+                        <select name="gender" id="admin_leader_gender" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" required>
+                            <option value="MALE">Male</option>
+                            <option value="FEMALE">Female</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-700 mb-1">Designation</label>
+                        <input type="text" name="designation" id="admin_leader_desgn" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" placeholder="e.g. SA, SGT, PD">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-700 mb-1">Mobile</label>
+                        <input type="tel" name="mobile" id="admin_leader_mobile" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" placeholder="10 digits">
+                    </div>
+                </div>
+
+                <!-- Uniform Sizing & Shoe Size -->
+                <div class="p-3 bg-blue-50/70 border border-blue-200 rounded-xl space-y-3">
+                    <div class="text-[11px] font-bold text-blue-950 uppercase tracking-wider flex items-center justify-between">
+                        <span>👔 Leader Uniform & Tailoring Measurements</span>
+                        <span class="text-[10px] text-blue-600 font-normal">Optional / inches & cm</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-700 mb-0.5">Uniform Size</label>
+                            <select name="uniform_size" id="admin_leader_uniform_size" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
+                                <option value="">Select Size</option>
+                                <option value="36">Size 36 (XS)</option>
+                                <option value="38">Size 38 (S)</option>
+                                <option value="40">Size 40 (M)</option>
+                                <option value="42">Size 42 (L)</option>
+                                <option value="44">Size 44 (XL)</option>
+                                <option value="46">Size 46 (XXL)</option>
+                                <option value="48">Size 48 (3XL)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-700 mb-0.5">Shoe Size</label>
+                            <select name="shoe_size" id="admin_leader_shoe_size" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
+                                <option value="">Select Shoe</option>
+                                <option value="5">Size 5</option>
+                                <option value="6">Size 6</option>
+                                <option value="7">Size 7</option>
+                                <option value="8">Size 8</option>
+                                <option value="9">Size 9</option>
+                                <option value="10">Size 10</option>
+                                <option value="11">Size 11</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-700 mb-0.5">Height (cm)</label>
+                            <input type="number" step="0.5" name="height_cm" id="admin_leader_height_cm" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="e.g. 165">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-700 mb-0.5">Chest / Bust (in)</label>
+                            <input type="number" step="0.5" name="chest_bust" id="admin_leader_chest_bust" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="e.g. 38">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-700 mb-0.5">Waist (in)</label>
+                            <input type="number" step="0.5" name="waist" id="admin_leader_waist" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="e.g. 32">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-700 mb-0.5">Shoulder (in)</label>
+                            <input type="number" step="0.5" name="shoulder" id="admin_leader_shoulder" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="e.g. 17.5">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-700 mb-0.5">Neck (in)</label>
+                            <input type="number" step="0.5" name="neck" id="admin_leader_neck" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="e.g. 15">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-700 mb-0.5">Sleeve (in)</label>
+                            <input type="number" step="0.5" name="sleeve" id="admin_leader_sleeve" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="e.g. 23">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-700 mb-0.5">Top/Shirt Length (in)</label>
+                            <input type="number" step="0.5" name="top_length" id="admin_leader_top_length" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="e.g. 28">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-700 mb-0.5">Pant/Salwar Length (in)</label>
+                            <input type="number" step="0.5" name="bottom_length" id="admin_leader_bottom_length" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="e.g. 39">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-700 mb-0.5">Hip (in)</label>
+                            <input type="number" step="0.5" name="hip" id="admin_leader_hip" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs" placeholder="e.g. 38">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="resetAdminLeaderForm()" class="px-3 py-1.5 text-xs text-slate-600">Clear</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-900 hover:bg-blue-800 text-white font-bold text-xs rounded-lg">Save Unit Leader</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openResetPasswordModal(udise, schoolName) {
+    document.getElementById('reset_password_form').action = `/district/schools/${udise}/reset-password/`;
+    document.getElementById('reset_school_label').textContent = `${schoolName} (UDISE: ${udise})`;
+    document.getElementById('reset_pw_input').value = 'BSG@Sangareddy2026';
+    openModal('resetPasswordModal');
+}
+
+function openQuickPasswordModal() {
+    document.getElementById('quick_school_select').selectedIndex = 0;
+    document.getElementById('quick_pw_input').value = 'BSG@Sangareddy2026';
+    openModal('quickPasswordModal');
+}
+
+function setPresetPassword(inputId, val) {
+    const el = document.getElementById(inputId);
+    if (el) el.value = val;
+}
+
+function generateRandomPassword(inputId) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
+    let res = 'BSG@';
+    for (let i = 0; i < 6; i++) {
+        res += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const el = document.getElementById(inputId);
+    if (el) el.value = res;
+}
+
+function copyInputText(inputId, btn) {
+    const el = document.getElementById(inputId);
+    if (!el) return;
+    navigator.clipboard.writeText(el.value).then(() => {
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = orig; }, 1500);
+    });
+}
+
+function copySchoolCredentials(labelId, pwInputId, btn) {
+    const label = document.getElementById(labelId).textContent;
+    const pw = document.getElementById(pwInputId).value;
+    const text = `BSG Sangareddy School Portal Login\nSchool: ${label}\nPassword: ${pw}\nPortal URL: http://127.0.0.1:8000/login/`;
+    navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.textContent;
+        btn.textContent = '✅ Credentials Copied!';
+        setTimeout(() => { btn.textContent = orig; }, 2000);
+    });
+}
+
+function updateQuickSchoolLabel() {
+    // optional helper
+}
+
+function copyQuickCredentials(btn) {
+    const select = document.getElementById('quick_school_select');
+    if (!select || !select.value) {
+        alert('Please select a school first.');
+        return;
+    }
+    const opt = select.options[select.selectedIndex];
+    const pw = document.getElementById('quick_pw_input').value;
+    const text = `BSG Sangareddy School Portal Login\nSchool: ${opt.textContent.trim()}\nUDISE: ${select.value}\nPassword: ${pw}\nPortal URL: http://127.0.0.1:8000/login/`;
+    navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.textContent;
+        btn.textContent = '✅ Credentials Copied!';
+        setTimeout(() => { btn.textContent = orig; }, 2000);
+    });
+}
+
+function openEditQuotaModal(udise, schoolName, bQuota, gQuota) {
+    document.getElementById('edit_quota_form').action = `/district/schools/${udise}/edit-quota/`;
+    document.getElementById('quota_school_label').textContent = `${schoolName} (UDISE: ${udise})`;
+    document.getElementById('modal_boys_quota').value = bQuota;
+    document.getElementById('modal_girls_quota').value = gQuota;
+    openModal('editQuotaModal');
+}
+
+function openAdminLeaderModal(schoolId, schoolName) {
+    document.getElementById('admin_leader_school_id').value = schoolId;
+    document.getElementById('admin_leader_school_name').textContent = schoolName;
+    resetAdminLeaderForm();
+
+    const container = document.getElementById('admin_leader_cards_container');
+    container.innerHTML = '<p class="text-xs text-slate-400">Loading leaders...</p>';
+
+    fetch(`/api/schools/${schoolId}/leaders/`)
+        .then(res => res.json())
+        .then(data => {
+            container.innerHTML = '';
+            if (data.leaders && data.leaders.length > 0) {
+                data.leaders.forEach(l => {
+                    const card = document.createElement('div');
+                    card.className = 'p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs';
+                    const measList = [];
+                    if (l.uniform_size) measList.push(`Uniform Sz: <b>${l.uniform_size}</b>`);
+                    if (l.shoe_size) measList.push(`Shoe: <b>${l.shoe_size}</b>`);
+                    if (l.height_cm) measList.push(`Ht: <b>${l.height_cm}cm</b>`);
+                    if (l.chest_bust) measList.push(`Ch/Bust: <b>${l.chest_bust}"</b>`);
+                    if (l.waist) measList.push(`W: <b>${l.waist}"</b>`);
+                    const measStr = measList.length > 0 ? `<div class="mt-1 text-[11px] text-slate-600">${measList.join(' · ')}</div>` : '';
+
+                    card.innerHTML = `
+                        <div>
+                            <div class="font-bold text-slate-900">${l.name} <span class="text-slate-500 font-normal">(${l.designation || 'Teacher'})</span></div>
+                            <div class="text-[11px] text-blue-900 font-semibold">${l.role_display} · 📞 ${l.mobile || 'No Mobile'}</div>
+                            ${measStr}
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <button type="button" onclick='populateLeaderEdit(${JSON.stringify(l)})' class="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold rounded text-[11px]">Edit</button>
+                            <form method="POST" action="/leaders/${l.id}/delete/" class="inline-block" onsubmit="return confirm('Remove leader ${l.name}?');">
+                                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                                <button type="submit" class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded text-[11px]">Delete</button>
+                            </form>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            } else {
+                container.innerHTML = '<p class="text-xs text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200">No leaders assigned for this school yet. Use the form below to appoint a leader.</p>';
+            }
+            openModal('adminLeaderModal');
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Failed to load leaders.');
+        });
+}
+
+function populateLeaderEdit(leader) {
+    document.getElementById('admin_leader_id').value = leader.id;
+    document.getElementById('admin_leader_name').value = leader.name;
+    document.getElementById('admin_leader_role').value = leader.role;
+    document.getElementById('admin_leader_gender').value = leader.gender;
+    document.getElementById('admin_leader_desgn').value = leader.designation || '';
+    document.getElementById('admin_leader_mobile').value = leader.mobile || '';
+    document.getElementById('admin_leader_uniform_size').value = leader.uniform_size || '';
+    document.getElementById('admin_leader_shoe_size').value = leader.shoe_size || '';
+    document.getElementById('admin_leader_height_cm').value = leader.height_cm || '';
+    document.getElementById('admin_leader_chest_bust').value = leader.chest_bust || '';
+    document.getElementById('admin_leader_waist').value = leader.waist || '';
+    document.getElementById('admin_leader_neck').value = leader.neck || '';
+    document.getElementById('admin_leader_shoulder').value = leader.shoulder || '';
+    document.getElementById('admin_leader_sleeve').value = leader.sleeve || '';
+    document.getElementById('admin_leader_top_length').value = leader.top_length || '';
+    document.getElementById('admin_leader_bottom_length').value = leader.bottom_length || '';
+    document.getElementById('admin_leader_hip').value = leader.hip || '';
+    document.getElementById('admin_leader_form_title').textContent = `Edit Leader: ${leader.name}`;
+}
+
+function resetAdminLeaderForm() {
+    document.getElementById('admin_leader_id').value = '';
+    document.getElementById('admin_leader_name').value = '';
+    document.getElementById('admin_leader_desgn').value = '';
+    document.getElementById('admin_leader_mobile').value = '';
+    document.getElementById('admin_leader_uniform_size').value = '';
+    document.getElementById('admin_leader_shoe_size').value = '';
+    document.getElementById('admin_leader_height_cm').value = '';
+    document.getElementById('admin_leader_chest_bust').value = '';
+    document.getElementById('admin_leader_waist').value = '';
+    document.getElementById('admin_leader_neck').value = '';
+    document.getElementById('admin_leader_shoulder').value = '';
+    document.getElementById('admin_leader_sleeve').value = '';
+    document.getElementById('admin_leader_top_length').value = '';
+    document.getElementById('admin_leader_bottom_length').value = '';
+    document.getElementById('admin_leader_hip').value = '';
+    document.getElementById('admin_leader_form_title').textContent = 'Assign / Edit Unit Leader';
+}
+</script>
+{% endblock %}

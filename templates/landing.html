@@ -1,0 +1,393 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}The Bharat Scouts &amp; Guides - Sangareddy District | Official Portal{% endblock %}
+
+{% block banner_top %}
+<!-- Official District Leadership Banner (Responsive, Non-Fixed, Size-Optimized) -->
+<div class="w-full bg-gradient-to-b from-blue-50/70 via-white to-slate-100/80 border-b border-slate-200 shadow-sm">
+    <div class="max-w-5xl mx-auto px-2 sm:px-4 py-2 sm:py-3.5 flex justify-center items-center">
+        <img src="{% static 'images/bsg_header_banner.jpg' %}" 
+             alt="The Bharat Scouts and Guides - Sangareddy District Association" 
+             class="w-full h-auto max-h-48 sm:max-h-60 md:max-h-72 object-contain rounded-xl sm:rounded-2xl shadow-sm border border-slate-200/80 select-none">
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8 my-4 sm:my-8">
+
+    <!-- 2. HERO BANNER: OFFICIAL MOTTO & RECOGNITION -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-blue-950 via-blue-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-10 shadow-2xl border border-blue-800/60">
+        <!-- Background Decorative Watermark -->
+        <div class="absolute -right-12 -bottom-12 opacity-10 text-[200px] select-none pointer-events-none font-serif">
+            ⚜
+        </div>
+
+        <div class="relative z-10 max-w-4xl mx-auto text-center space-y-4">
+            <!-- Official Badges -->
+            <div class="flex flex-wrap items-center justify-center gap-2">
+                <span class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-400 text-blue-950 text-xs font-black uppercase tracking-wider shadow">
+                    <span>🏛️</span>
+                    <span>Sangareddy District Association</span>
+                </span>
+                <span class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-800/80 text-blue-200 text-xs font-semibold border border-blue-700">
+                    <span>⚜</span>
+                    <span>Department of School Education · Telangana</span>
+                </span>
+            </div>
+
+            <!-- Portal Heading -->
+            <h1 class="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
+                The Bharat Scouts and Guides
+            </h1>
+            <p class="text-xs sm:text-sm text-blue-200 font-medium max-w-2xl mx-auto">
+                Official Sanctioned Institutional Portal for Scouts, Guides, Cubs &amp; Bulbuls Enrollment and Uniform Supply Administration.
+            </p>
+
+            <!-- MOTTO HIGHLIGHT BANNER -->
+            <div class="pt-3 pb-1">
+                <div class="inline-block bg-white/10 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/20 shadow-inner">
+                    <div class="text-[10px] uppercase tracking-widest text-amber-300 font-bold mb-0.5">
+                        Official Motto · అధికారిక ధ్యేయం
+                    </div>
+                    <div class="text-2xl sm:text-3xl font-black text-amber-400 tracking-wide font-serif">
+                        " BE PREPARED "
+                    </div>
+                    <div class="text-xs sm:text-sm font-semibold text-slate-100 mt-0.5">
+                        " సదా సంసిద్ధులుగా ఉండండి " <span class="text-amber-300 font-normal">(సేవకు సిద్ధం)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AIM TO ACHIEVE -->
+            <div class="bg-blue-900/60 border border-blue-700/60 rounded-2xl p-4 sm:p-5 text-xs sm:text-sm text-blue-100 leading-relaxed text-left max-w-3xl mx-auto shadow-md">
+                <div class="font-extrabold text-amber-300 flex items-center space-x-2 mb-1.5 text-xs sm:text-sm uppercase tracking-wide">
+                    <span>🎯</span>
+                    <span>Our Aim to Achieve · మన పరమ లక్ష్యం:</span>
+                </div>
+                <p class="text-slate-200">
+                    The aim of Scouting and Guiding is to foster the physical, intellectual, emotional, social, and spiritual development of young people, moulding them into disciplined, self-reliant, and responsible citizens dedicated to selfless community service and nation building.
+                </p>
+                <p class="text-blue-200 mt-2 text-[11px] sm:text-xs italic">
+                    "యువతలో సత్ప్రవర్తన, శారీరక దృఢత్వం, నాయకత్వ లక్షణాలు, సమాజ సేవా తత్పరత మరియు బాధ్యతాయుత పౌరసత్వాన్ని పెంపొందిస్తూ సమాజ హితానికి అంకితం చేయడం."
+                </p>
+            </div>
+
+            <!-- Primary CTAs -->
+            <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+                <a href="{% url 'login' %}" class="px-6 py-3 bg-amber-400 hover:bg-amber-300 text-blue-950 font-black text-sm rounded-xl shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5 flex items-center space-x-2">
+                    <span>🏫</span>
+                    <span>School Login Portal</span>
+                </a>
+                <a href="{% url 'login' %}?tab=admin" class="px-6 py-3 bg-blue-800 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md border border-blue-600 transition flex items-center space-x-2">
+                    <span>🏛️</span>
+                    <span>District Office Login</span>
+                </a>
+                <a href="https://www.instagram.com/bsg_sangareddy?utm_source=qr&gwpx=bW53cGNkMHJqMDRz" target="_blank" rel="noopener noreferrer" class="px-5 py-3 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-bold text-sm rounded-xl shadow-md transition flex items-center space-x-2">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                    <span>@bsg_sangareddy</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. OFFICIAL CHARTERS, LAWS & TRADITIONS (5 Core Pillars of Scouting & Guiding) -->
+    <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200 space-y-6">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-4 border-b border-slate-100">
+            <div>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-900 text-xs font-bold uppercase tracking-wider">
+                    <span>⚜</span>
+                    <span>Foundational Principles &amp; Traditions</span>
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1.5">
+                    Official Promises, Laws &amp; Anthems
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+                    The core moral tenets, flag song, and daily prayer guiding every Scout and Guide across Sangareddy District.
+                </p>
+            </div>
+            <div class="text-xs text-slate-400 italic">
+                <span>💡 Click on any charter poster to view high-resolution full text</span>
+            </div>
+        </div>
+
+        <!-- 5 Posters Responsive Grid (2 columns on mobile, 3 on tablet, 5 on desktop) -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4 lg:gap-5">
+            <!-- 1. Scout Promise -->
+            <div class="group relative bg-slate-50 hover:bg-blue-50/50 rounded-2xl p-2.5 sm:p-3 border border-slate-200 hover:border-blue-300 shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
+                 onclick="openLightbox('{% static 'images/bsg_scout_promise.jpg' %}', 'Scout Promise · స్కౌట్ ప్రతిజ్ఞ')">
+                <div class="overflow-hidden rounded-xl border border-slate-200/80 bg-white aspect-[2/3] relative">
+                    <img src="{% static 'images/bsg_scout_promise.jpg' %}" 
+                         alt="Bharat Scouts &amp; Guides - Scout Promise" 
+                         loading="lazy"
+                         class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300">
+                    <div class="absolute inset-0 bg-blue-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span class="bg-white/95 text-blue-950 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md">🔍 Enlarge</span>
+                    </div>
+                </div>
+                <div class="mt-2.5 text-center">
+                    <div class="text-xs font-black text-slate-900 tracking-tight group-hover:text-blue-900 transition">
+                        Scout Promise
+                    </div>
+                    <div class="text-[10px] text-blue-700 font-semibold">
+                        స్కౌట్ ప్రతిజ్ఞ
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Guide Promise -->
+            <div class="group relative bg-slate-50 hover:bg-rose-50/50 rounded-2xl p-2.5 sm:p-3 border border-slate-200 hover:border-rose-300 shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
+                 onclick="openLightbox('{% static 'images/bsg_guide_promise.jpg' %}', 'Guide Promise · గైడ్ ప్రతిజ్ఞ')">
+                <div class="overflow-hidden rounded-xl border border-slate-200/80 bg-white aspect-[2/3] relative">
+                    <img src="{% static 'images/bsg_guide_promise.jpg' %}" 
+                         alt="Bharat Scouts &amp; Guides - Guide Promise" 
+                         loading="lazy"
+                         class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300">
+                    <div class="absolute inset-0 bg-rose-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span class="bg-white/95 text-rose-950 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md">🔍 Enlarge</span>
+                    </div>
+                </div>
+                <div class="mt-2.5 text-center">
+                    <div class="text-xs font-black text-slate-900 tracking-tight group-hover:text-rose-900 transition">
+                        Guide Promise
+                    </div>
+                    <div class="text-[10px] text-rose-700 font-semibold">
+                        గైడ్ ప్రతిజ్ఞ
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Scout & Guide Law (9 Points) -->
+            <div class="group relative bg-slate-50 hover:bg-emerald-50/50 rounded-2xl p-2.5 sm:p-3 border border-slate-200 hover:border-emerald-300 shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
+                 onclick="openLightbox('{% static 'images/bsg_scout_guide_law.jpg' %}', 'Scout &amp; Guide Law (9 Points) · 9 సూత్రాల నియమావళి')">
+                <div class="overflow-hidden rounded-xl border border-slate-200/80 bg-white aspect-[2/3] relative">
+                    <img src="{% static 'images/bsg_scout_guide_law.jpg' %}" 
+                         alt="Bharat Scouts &amp; Guides - Scout and Guide Law" 
+                         loading="lazy"
+                         class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300">
+                    <div class="absolute inset-0 bg-emerald-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span class="bg-white/95 text-emerald-950 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md">🔍 Enlarge</span>
+                    </div>
+                </div>
+                <div class="mt-2.5 text-center">
+                    <div class="text-xs font-black text-slate-900 tracking-tight group-hover:text-emerald-900 transition">
+                        Scout &amp; Guide Law
+                    </div>
+                    <div class="text-[10px] text-emerald-700 font-semibold">
+                        9 సూత్రాల నియమావళి
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Prayer Song -->
+            <div class="group relative bg-slate-50 hover:bg-purple-50/50 rounded-2xl p-2.5 sm:p-3 border border-slate-200 hover:border-purple-300 shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
+                 onclick="openLightbox('{% static 'images/bsg_prayer_song.jpg' %}', 'Prayer Song · ప్రార్థనా గీతం (దయా కర్ దాన్ భక్తి కా)')">
+                <div class="overflow-hidden rounded-xl border border-slate-200/80 bg-white aspect-[2/3] relative">
+                    <img src="{% static 'images/bsg_prayer_song.jpg' %}" 
+                         alt="Bharat Scouts &amp; Guides - Prayer Song" 
+                         loading="lazy"
+                         class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300">
+                    <div class="absolute inset-0 bg-purple-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span class="bg-white/95 text-purple-950 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md">🔍 Enlarge</span>
+                    </div>
+                </div>
+                <div class="mt-2.5 text-center">
+                    <div class="text-xs font-black text-slate-900 tracking-tight group-hover:text-purple-900 transition">
+                        Prayer Song
+                    </div>
+                    <div class="text-[10px] text-purple-700 font-semibold">
+                        ప్రార్థనా గీతం
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Flag Song -->
+            <div class="group relative bg-slate-50 hover:bg-amber-50/50 rounded-2xl p-2.5 sm:p-3 border border-slate-200 hover:border-amber-300 shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between col-span-2 sm:col-span-1"
+                 onclick="openLightbox('{% static 'images/bsg_flag_song.jpg' %}', 'Flag Song · ధ్వజ గీతం (భారత్ స్కౌట్ గైడ్ ఝండా ఊంచా సదా రహేగా)')">
+                <div class="overflow-hidden rounded-xl border border-slate-200/80 bg-white aspect-[2/3] relative">
+                    <img src="{% static 'images/bsg_flag_song.jpg' %}" 
+                         alt="Bharat Scouts &amp; Guides - Flag Song" 
+                         loading="lazy"
+                         class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300">
+                    <div class="absolute inset-0 bg-amber-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span class="bg-white/95 text-amber-950 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md">🔍 Enlarge</span>
+                    </div>
+                </div>
+                <div class="mt-2.5 text-center">
+                    <div class="text-xs font-black text-slate-900 tracking-tight group-hover:text-amber-900 transition">
+                        Flag Song
+                    </div>
+                    <div class="text-[10px] text-amber-700 font-semibold">
+                        ధ్వజ గీతం
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. INSTAGRAM & OFFICIAL MEDIA CONNECT (With QR Code) -->
+    <div class="bg-gradient-to-br from-white to-pink-50 rounded-3xl p-6 sm:p-8 shadow-sm border border-pink-200">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+            <!-- Left: Description & Links -->
+            <div class="md:col-span-7 space-y-4">
+                <div class="inline-flex items-center space-x-2 px-3 py-1 bg-pink-100 text-pink-900 rounded-full text-xs font-bold uppercase tracking-wide">
+                    <span>📸</span>
+                    <span>Official Social Media Channel</span>
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                    Follow BSG Sangareddy on Instagram
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    Stay connected with real-time photographs, field rallies, leadership camps, jamboree highlights, flag hoisting ceremonies, and meritorious student achievements from across Sangareddy District.
+                </p>
+
+                <div class="bg-white p-4 rounded-2xl border border-pink-200 shadow-sm space-y-2">
+                    <div class="text-xs font-bold text-slate-800">
+                        Official Profile Handle:
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base sm:text-lg font-black font-mono text-pink-700">@bsg_sangareddy</span>
+                        <span class="text-xs bg-pink-50 text-pink-800 px-2 py-0.5 rounded font-semibold border border-pink-200">Verified District Account</span>
+                    </div>
+                    <div class="pt-2">
+                        <a href="https://www.instagram.com/bsg_sangareddy?utm_source=qr&gwpx=bW53cGNkMHJqMDRz" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-pink-600 via-rose-600 to-amber-600 hover:opacity-95 text-white font-bold text-xs rounded-xl shadow transition">
+                            <span>Open Instagram Profile</span>
+                            <span>→</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 text-xs text-slate-500">
+                    <span>📱</span>
+                    <span>Scan the QR code alongside with your smartphone camera to visit instantly.</span>
+                </div>
+            </div>
+
+            <!-- Right: Displaying the Photo in Scan to Follow -->
+            <div class="md:col-span-5 flex justify-center">
+                <div class="relative group w-full max-w-sm">
+                    <div class="bg-white p-4 rounded-3xl shadow-xl border-2 border-pink-300 transition transform hover:scale-[1.02] duration-300 space-y-3">
+                        <img src="{% static 'images/scan_to_follow_photo.jpg' %}" alt="BSG Sangareddy Official" class="w-full h-auto rounded-xl object-contain shadow-sm border border-slate-200 select-none">
+                        
+                        <!-- Scan to Follow Card Footer -->
+                        <div class="text-center pt-2 border-t border-pink-100 flex items-center justify-between">
+                            <div class="text-left">
+                                <div class="text-xs font-black text-slate-800 tracking-wide uppercase">
+                                    SCAN TO FOLLOW
+                                </div>
+                                <a href="https://www.instagram.com/bsg_sangareddy?utm_source=qr&gwpx=bW53cGNkMHJqMDRz" target="_blank" rel="noopener noreferrer" class="text-xs text-pink-700 font-mono font-bold hover:underline">
+                                    @bsg_sangareddy
+                                </a>
+                            </div>
+                            <a href="https://www.instagram.com/bsg_sangareddy?utm_source=qr&gwpx=bW53cGNkMHJqMDRz" target="_blank" rel="noopener noreferrer" class="p-1.5 bg-pink-50 hover:bg-pink-100 rounded-xl border border-pink-200 text-center flex items-center gap-1.5 transition">
+                                <img src="{% static 'images/bsg_instagram_qr.jpg' %}" alt="Instagram QR Code" class="w-12 h-12 rounded-lg object-contain shadow-sm">
+                                <div class="text-left pr-1">
+                                    <span class="block text-[10px] font-bold text-pink-900 leading-tight">Instant QR</span>
+                                    <span class="block text-[9px] text-pink-700">Tap to Scan</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. OFFICIAL GATEWAYS (Schools, Admin, Help Desk) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <!-- Gateway 1: School Portal -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition space-y-3 flex flex-col justify-between">
+            <div class="space-y-2">
+                <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-900 flex items-center justify-center text-xl font-bold">
+                    🏫
+                </div>
+                <h3 class="font-bold text-base text-slate-900">Recognized School Portal</h3>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Secure login for headmasters and unit leaders across all 28 mandals. Enroll students, enter tailoring measurements, and export certified nominal rolls.
+                </p>
+            </div>
+            <a href="{% url 'login' %}" class="w-full py-2.5 px-4 bg-blue-800 hover:bg-blue-900 text-white font-bold text-xs rounded-xl text-center shadow transition block">
+                Access School Sign In →
+            </a>
+        </div>
+
+        <!-- Gateway 2: District Command Center -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition space-y-3 flex flex-col justify-between">
+            <div class="space-y-2">
+                <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-900 flex items-center justify-center text-xl font-bold">
+                    🏛️
+                </div>
+                <h3 class="font-bold text-base text-slate-900">District Command Center</h3>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Administrative console managed by District Secretary Sri Vancha Madhava Reddy. Review district quotas, reset passwords, and download consolidated supply rolls.
+                </p>
+            </div>
+            <a href="{% url 'login' %}?tab=admin" class="w-full py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl text-center shadow transition block">
+                District Office Sign In →
+            </a>
+        </div>
+
+        <!-- Gateway 3: Help Desk & Contact -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition space-y-3 flex flex-col justify-between">
+            <div class="space-y-2">
+                <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center text-xl font-bold">
+                    📞
+                </div>
+                <h3 class="font-bold text-base text-slate-900">Help Desk &amp; Guidance</h3>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    User guides, school category quotas, SHORT vs BRIEF modes, tailoring specs, and direct helpline assistance from the District Secretary (+91 94400 69750).
+                </p>
+            </div>
+            <a href="{% url 'help' %}" class="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl text-center shadow transition block">
+                User Guide &amp; FAQs →
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<!-- Lightbox Modal for High-Resolution Poster Viewing -->
+<div id="charterLightboxModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6" onclick="closeLightboxOnBackdrop(event)">
+    <div class="relative max-w-xl w-full bg-slate-900 rounded-3xl p-3 sm:p-4 shadow-2xl border border-slate-700 max-h-[94vh] flex flex-col items-center">
+        <div class="w-full flex items-center justify-between pb-2.5 px-2 border-b border-slate-800 text-white">
+            <h4 id="lightboxTitle" class="font-bold text-sm sm:text-base text-amber-300">Charter Poster</h4>
+            <button type="button" onclick="closeLightbox()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-lg font-bold transition">
+                ✕
+            </button>
+        </div>
+        <div class="mt-2.5 overflow-y-auto max-h-[80vh] flex items-center justify-center w-full">
+            <img id="lightboxImg" src="" alt="Charter Poster" class="max-h-[76vh] w-auto object-contain rounded-xl shadow-lg border border-slate-800 select-none">
+        </div>
+        <p class="text-[11px] text-slate-400 mt-2 text-center">
+            Tap anywhere outside or press ✕ to close
+        </p>
+    </div>
+</div>
+
+<script>
+function openLightbox(src, title) {
+    document.getElementById('lightboxImg').src = src;
+    document.getElementById('lightboxTitle').textContent = title;
+    document.getElementById('charterLightboxModal').classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+}
+
+function closeLightbox() {
+    document.getElementById('charterLightboxModal').classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+}
+
+function closeLightboxOnBackdrop(e) {
+    if (e.target.id === 'charterLightboxModal') {
+        closeLightbox();
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeLightbox();
+    }
+});
+</script>
+{% endblock %}

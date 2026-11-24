@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ t.help_title }} | BSG Sangareddy{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Header Banner -->
+    <div class="bg-blue-900 text-white rounded-2xl p-6 sm:p-8 shadow-md">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <span class="bg-amber-400 text-blue-950 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                    {% if lang == 'te' %}అధికారిక మార్గదర్శిని{% else %}Official Guide & FAQ{% endif %}
+                </span>
+                <h1 class="text-2xl sm:text-3xl font-black mt-2 tracking-tight">
+                    {{ t.help_title }}
+                </h1>
+                <p class="text-xs sm:text-sm text-blue-200 mt-1">
+                    {{ t.help_subtitle }}
+                </p>
+            </div>
+
+            <!-- Language Switcher Pill -->
+            <div class="inline-flex items-center bg-blue-950 p-1.5 rounded-xl border border-blue-700/60 self-start sm:self-center">
+                <a href="?lang=en" class="px-3 py-1.5 rounded-lg text-xs font-bold transition {% if lang == 'en' %}bg-amber-400 text-blue-950 shadow{% else %}text-blue-200 hover:text-white{% endif %}">
+                    English
+                </a>
+                <a href="?lang=te" class="px-3 py-1.5 rounded-lg text-xs font-bold transition {% if lang == 'te' %}bg-amber-400 text-blue-950 shadow{% else %}text-blue-200 hover:text-white{% endif %}">
+                    తెలుగు
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Navigation Index -->
+    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex flex-wrap items-center gap-2 text-xs">
+        <span class="font-bold text-slate-700">Quick Jumps:</span>
+        <a href="#section-login" class="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 text-blue-800 rounded-lg">1. Sign In</a>
+        <a href="#section-quota" class="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 text-blue-800 rounded-lg">2. Quota & School Types</a>
+        <a href="#section-modes" class="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 text-blue-800 rounded-lg">3. SHORT vs BRIEF Specs</a>
+        <a href="#section-excel" class="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 text-blue-800 rounded-lg">4. Excel Upload</a>
+        <a href="#section-pdf" class="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 text-blue-800 rounded-lg">5. PDF Report</a>
+        <a href="#section-faq" class="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg font-bold">Frequently Asked Questions</a>
+    </div>
+
+    <!-- Official Help Desk Authority & District Secretary Card -->
+    <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-5 border-2 border-amber-300 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="space-y-1">
+            <div class="flex items-center space-x-2">
+                <span class="px-2 py-0.5 bg-amber-500 text-slate-950 font-black text-[10px] uppercase rounded">
+                    Official Help Desk &amp; Portal Administrator
+                </span>
+                <span class="text-xs font-bold text-amber-900">Sri Vancha Madhava Reddy</span>
+            </div>
+            <h3 class="text-base sm:text-lg font-black text-slate-950">
+                District Secretary, The Bharat Scouts &amp; Guides, Sangareddy
+            </h3>
+            <p class="text-xs text-slate-700 leading-relaxed max-w-xl">
+                <strong>Important:</strong> The District Administrator is the <strong>District Secretary himself (Sri Vancha Madhava Reddy)</strong>. If you experience login difficulties, password reset issues, or require quota increases for your school, contact him directly.
+            </p>
+        </div>
+        <div class="flex flex-col sm:flex-row md:flex-col items-start sm:items-center md:items-end gap-2 shrink-0">
+            <a href="tel:+919440069750" class="px-4 py-2 bg-blue-900 hover:bg-blue-800 text-white font-black text-xs rounded-xl shadow flex items-center space-x-1.5 font-mono">
+                <span>📞</span>
+                <span>+91 94400 69750</span>
+            </a>
+            <a href="https://www.instagram.com/bsg_sangareddy?utm_source=qr&gwpx=bW53cGNkMHJqMDRz" target="_blank" rel="noopener noreferrer" class="px-3.5 py-1.5 bg-gradient-to-r from-pink-600 to-rose-600 text-white font-bold text-[11px] rounded-lg shadow flex items-center space-x-1">
+                <span>📸</span>
+                <span>@bsg_sangareddy</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 1. Sign In Section -->
+    <section id="section-login" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-3">
+        <h2 class="text-base sm:text-lg font-bold text-blue-950 flex items-center space-x-2">
+            <span>🔑</span> <span>{{ t.section_login_title }}</span>
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+            {{ t.section_login_body }}
+        </p>
+        <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900">
+            <b>UDISE Identity Rule:</b> Duplicate school names in different mandals are disambiguated by their 11-digit UDISE code. Always verify your school's UDISE code before submitting measurements.
+        </div>
+    </section>
+
+    <!-- 2. Quota & Rules by School Type -->
+    <section id="section-quota" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4">
+        <h2 class="text-base sm:text-lg font-bold text-blue-950 flex items-center space-x-2">
+            <span>📊</span> <span>{{ t.section_quota_title }}</span>
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            {{ t.section_quota_body }}
+        </p>
+
+        <!-- School Type Matrix Table -->
+        <div class="overflow-x-auto border border-slate-200 rounded-xl">
+            <table class="w-full text-left text-xs">
+                <thead>
+                    <tr class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                        <th class="py-2.5 px-3">School Category</th>
+                        <th class="py-2.5 px-3 text-center">Permitted Classes</th>
+                        <th class="py-2.5 px-3">BSG Units</th>
+                        <th class="py-2.5 px-3 text-center">Uniform Sizes</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    <tr>
+                        <td class="py-2 px-3 font-semibold text-slate-900">Co-ed High School</td>
+                        <td class="py-2 px-3 text-center font-mono">6 – 9</td>
+                        <td class="py-2 px-3">Scouts (Boys) & Guides (Girls)</td>
+                        <td class="py-2 px-3 text-center font-mono">28 – 40</td>
+                    </tr>
+                    <tr>
+                        <td class="py-2 px-3 font-semibold text-slate-900">Girls High School</td>
+                        <td class="py-2 px-3 text-center font-mono">6 – 9</td>
+                        <td class="py-2 px-3 text-emerald-700 font-semibold">Guides Only (Girls)</td>
+                        <td class="py-2 px-3 text-center font-mono">28 – 40</td>
+                    </tr>
+                    <tr>
+                        <td class="py-2 px-3 font-semibold text-slate-900">Boys High School</td>
+                        <td class="py-2 px-3 text-center font-mono">6 – 9</td>
+                        <td class="py-2 px-3 text-blue-700 font-semibold">Scouts Only (Boys)</td>
+                        <td class="py-2 px-3 text-center font-mono">28 – 40</td>
+                    </tr>
+                    <tr>
+                        <td class="py-2 px-3 font-semibold text-slate-900">Primary School</td>
+                        <td class="py-2 px-3 text-center font-mono">3 – 5</td>
+                        <td class="py-2 px-3">Cubs (Boys) & Bulbuls (Girls)</td>
+                        <td class="py-2 px-3 text-center font-mono">24 – 34</td>
+                    </tr>
+                    <tr>
+                        <td class="py-2 px-3 font-semibold text-slate-900">Upper Primary School</td>
+                        <td class="py-2 px-3 text-center font-mono">6 – 7</td>
+                        <td class="py-2 px-3">Cubs (Boys) & Bulbuls (Girls)</td>
+                        <td class="py-2 px-3 text-center font-mono">24 – 34</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 3. SHORT vs BRIEF Details & Measurement Guide -->
+    <section id="section-modes" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4">
+        <h2 class="text-base sm:text-lg font-bold text-blue-950 flex items-center space-x-2">
+            <span>📏</span> <span>{{ t.section_modes_title }}</span>
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+            {{ t.section_modes_body }}
+        </p>
+
+        <!-- Measurement Schemas (Boys & Girls) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            <!-- Boys Measurement Card -->
+            <div class="p-4 bg-blue-50/70 rounded-xl border border-blue-200 space-y-2">
+                <div class="font-bold text-xs text-blue-900 uppercase">👦 Boys (Shirt & Pant)</div>
+                <ul class="text-xs text-slate-700 space-y-1 list-disc list-inside">
+                    <li><b>Height:</b> Measured in centimeters (cm)</li>
+                    <li><b>Chest:</b> Across fullest part of chest (inches)</li>
+                    <li><b>Waist:</b> Normal pant waistband line (inches)</li>
+                    <li><b>Neck:</b> Base of neck collar size (inches)</li>
+                    <li><b>Shoulder:</b> Tip to tip across back (inches)</li>
+                    <li><b>Sleeve:</b> Shoulder point to wrist (inches)</li>
+                    <li><b>Shirt Length & Pant Length:</b> Full length in inches</li>
+                </ul>
+            </div>
+
+            <!-- Girls Measurement Card -->
+            <div class="p-4 bg-emerald-50/70 rounded-xl border border-emerald-200 space-y-2">
+                <div class="font-bold text-xs text-emerald-900 uppercase">👧 Girls (Kameez & Salwar/Skirt)</div>
+                <ul class="text-xs text-slate-700 space-y-1 list-disc list-inside">
+                    <li><b>Height:</b> Measured in centimeters (cm)</li>
+                    <li><b>Bust:</b> Around fullest part of chest (inches)</li>
+                    <li><b>Waist:</b> Natural waist circumference (inches)</li>
+                    <li><b>Hip:</b> Around fullest part of hips (inches)</li>
+                    <li><b>Shoulder & Sleeve:</b> In inches</li>
+                    <li><b>Kameez Length:</b> Shoulder down to knee (inches)</li>
+                    <li><b>Salwar/Skirt:</b> Waistband down to ankle/knee (inches)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Bulk Excel Template & Transactional Import -->
+    <section id="section-excel" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-3">
+        <h2 class="text-base sm:text-lg font-bold text-blue-950 flex items-center space-x-2">
+            <span>📥</span> <span>{{ t.section_excel_title }}</span>
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+            {{ t.section_excel_body }}
+        </p>
+    </section>
+
+    <!-- 5. PDF Report & Official Submission -->
+    <section id="section-pdf" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-3">
+        <h2 class="text-base sm:text-lg font-bold text-blue-950 flex items-center space-x-2">
+            <span>📄</span> <span>{{ t.section_pdf_title }}</span>
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+            {{ t.section_pdf_body }}
+        </p>
+    </section>
+
+    <!-- FREQUENTLY ASKED QUESTIONS (FAQ) -->
+    <section id="section-faq" class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200 space-y-4">
+        <div class="flex items-center space-x-2 border-b border-slate-100 pb-4">
+            <span class="text-2xl">❓</span>
+            <h2 class="text-lg font-bold text-slate-900">
+                {% if lang == 'te' %}తరచుగా అడిగే ప్రశ్నలు (FAQ){% else %}Frequently Asked Questions (FAQ){% endif %}
+            </h2>
+        </div>
+
+        <div class="space-y-3">
+            <!-- FAQ 1: Quota Full -->
+            <details class="group bg-slate-50 p-4 rounded-xl border border-slate-200 cursor-pointer">
+                <summary class="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-blue-800 flex justify-between items-center">
+                    <span>{{ t.faq_quota_full_q }}</span>
+                    <span class="text-slate-400 group-open:rotate-180 transition">▼</span>
+                </summary>
+                <p class="text-xs text-slate-600 mt-2.5 pt-2 border-t border-slate-200 leading-relaxed">
+                    {{ t.faq_quota_full_a }}
+                </p>
+            </details>
+
+            <!-- FAQ 2: Missing Class or Size -->
+            <details class="group bg-slate-50 p-4 rounded-xl border border-slate-200 cursor-pointer">
+                <summary class="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-blue-800 flex justify-between items-center">
+                    <span>{{ t.faq_size_missing_q }}</span>
+                    <span class="text-slate-400 group-open:rotate-180 transition">▼</span>
+                </summary>
+                <p class="text-xs text-slate-600 mt-2.5 pt-2 border-t border-slate-200 leading-relaxed">
+                    {{ t.faq_size_missing_a }}
+                </p>
+            </details>
+
+            <!-- FAQ 3: Measurements Later -->
+            <details class="group bg-slate-50 p-4 rounded-xl border border-slate-200 cursor-pointer">
+                <summary class="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-blue-800 flex justify-between items-center">
+                    <span>{{ t.faq_measurements_later_q }}</span>
+                    <span class="text-slate-400 group-open:rotate-180 transition">▼</span>
+                </summary>
+                <p class="text-xs text-slate-600 mt-2.5 pt-2 border-t border-slate-200 leading-relaxed">
+                    {{ t.faq_measurements_later_a }}
+                </p>
+            </details>
+
+            <!-- FAQ 4: Excel Import Error -->
+            <details class="group bg-slate-50 p-4 rounded-xl border border-slate-200 cursor-pointer">
+                <summary class="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-blue-800 flex justify-between items-center">
+                    <span>{{ t.faq_excel_error_q }}</span>
+                    <span class="text-slate-400 group-open:rotate-180 transition">▼</span>
+                </summary>
+                <p class="text-xs text-slate-600 mt-2.5 pt-2 border-t border-slate-200 leading-relaxed">
+                    {{ t.faq_excel_error_a }}
+                </p>
+            </details>
+
+            <!-- FAQ 5: Forgot Password / Lockout -->
+            <details class="group bg-slate-50 p-4 rounded-xl border border-slate-200 cursor-pointer">
+                <summary class="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-blue-800 flex justify-between items-center">
+                    <span>{{ t.faq_forgot_password_q }}</span>
+                    <span class="text-slate-400 group-open:rotate-180 transition">▼</span>
+                </summary>
+                <p class="text-xs text-slate-600 mt-2.5 pt-2 border-t border-slate-200 leading-relaxed">
+                    {{ t.faq_forgot_password_a }}
+                </p>
+            </details>
+        </div>
+    </section>
+
+</div>
+{% endblock %}
