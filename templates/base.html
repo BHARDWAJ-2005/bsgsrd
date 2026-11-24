@@ -70,19 +70,19 @@
 
     <!-- Main Navigation Bar -->
     <header class="bg-blue-900 text-white shadow-md relative z-30">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between min-h-[3.75rem] sm:min-h-[4rem] py-2 sm:py-0 gap-2 sm:gap-4">
                 <!-- Brand / Logo -->
-                <div class="flex items-center space-x-3">
-                    <a href="{% url 'home' %}" class="flex items-center space-x-3 group">
-                        <div class="w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center text-blue-950 font-black text-xl shadow-md border-2 border-white">
+                <div class="flex items-center min-w-0 flex-1 sm:flex-initial">
+                    <a href="{% url 'home' %}" class="flex items-center space-x-2 sm:space-x-3 group min-w-0">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-full bg-amber-400 flex items-center justify-center text-blue-950 font-black text-lg sm:text-xl shadow-md border-2 border-white">
                             ⚜
                         </div>
-                        <div>
-                            <div class="font-bold text-base sm:text-lg tracking-tight leading-tight group-hover:text-amber-300 transition">
+                        <div class="min-w-0">
+                            <div class="font-bold text-xs sm:text-base md:text-lg tracking-tight leading-tight group-hover:text-amber-300 transition truncate sm:whitespace-normal">
                                 {% if current_lang == 'te' %}భారత్ స్కౌట్స్ & గైడ్స్{% else %}The Bharat Scouts & Guides{% endif %}
                             </div>
-                            <div class="text-[11px] text-blue-200 tracking-wider uppercase font-semibold">
+                            <div class="text-[9px] sm:text-[11px] text-blue-200 tracking-wider uppercase font-semibold leading-tight truncate sm:whitespace-normal">
                                 Sangareddy District · Telangana
                             </div>
                         </div>
@@ -90,13 +90,13 @@
                 </div>
 
                 <!-- Navigation Links & User Actions -->
-                <div class="flex items-center space-x-3 sm:space-x-4">
+                <div class="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
                     <!-- Bilingual Language Switcher -->
-                    <div class="flex items-center bg-blue-950/60 rounded-lg p-0.5 text-xs font-medium border border-blue-700/50">
-                        <a href="?lang=en" class="px-2 py-1 rounded {% if current_lang == 'en' %}bg-amber-400 text-blue-950 font-bold{% else %}text-blue-200 hover:text-white{% endif %} transition">
-                            English
+                    <div class="flex items-center bg-blue-950/60 rounded-lg p-0.5 text-[11px] sm:text-xs font-medium border border-blue-700/50">
+                        <a href="?lang=en" class="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded {% if current_lang == 'en' %}bg-amber-400 text-blue-950 font-bold{% else %}text-blue-200 hover:text-white{% endif %} transition">
+                            <span class="sm:hidden">EN</span><span class="hidden sm:inline">English</span>
                         </a>
-                        <a href="?lang=te" class="px-2 py-1 rounded {% if current_lang == 'te' %}bg-amber-400 text-blue-950 font-bold{% else %}text-blue-200 hover:text-white{% endif %} transition">
+                        <a href="?lang=te" class="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded {% if current_lang == 'te' %}bg-amber-400 text-blue-950 font-bold{% else %}text-blue-200 hover:text-white{% endif %} transition">
                             తెలుగు
                         </a>
                     </div>
@@ -111,28 +111,28 @@
 
                     {% if request.user.is_authenticated %}
                         {% if is_district_admin %}
-                            <span class="bg-emerald-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm">
-                                District Admin
+                            <span class="bg-emerald-600 text-white text-[10px] sm:text-[11px] font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full shadow-sm whitespace-nowrap">
+                                <span class="sm:hidden">Admin</span><span class="hidden sm:inline">District Admin</span>
                             </span>
-                            <a href="{% url 'district_dashboard' %}" class="text-xs bg-blue-800 hover:bg-blue-700 px-3 py-1.5 rounded font-medium transition">
-                                Command Center
+                            <a href="{% url 'district_dashboard' %}" class="text-xs bg-blue-800 hover:bg-blue-700 px-2 sm:px-3 py-1 sm:py-1.5 rounded font-medium transition whitespace-nowrap">
+                                <span class="sm:hidden">Admin</span><span class="hidden sm:inline">Command Center</span>
                             </a>
                         {% elif user_school %}
                             <div class="hidden md:block text-right">
                                 <div class="text-xs font-bold text-amber-300 truncate max-w-[200px]">{{ user_school.name }}</div>
                                 <div class="text-[10px] text-blue-200 font-mono">UDISE: {{ user_school.udise_code }}</div>
                             </div>
-                            <a href="{% url 'school_dashboard' %}" class="text-xs bg-blue-800 hover:bg-blue-700 px-2.5 py-1.5 rounded font-medium transition">
+                            <a href="{% url 'school_dashboard' %}" class="text-xs bg-blue-800 hover:bg-blue-700 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded font-medium transition whitespace-nowrap">
                                 Dashboard
                             </a>
                         {% endif %}
 
-                        <a href="{% url 'logout' %}" class="text-xs bg-red-600/90 hover:bg-red-700 text-white px-2.5 py-1.5 rounded font-medium transition">
-                            {% if current_lang == 'te' %}లాగ్ అవుట్{% else %}Sign Out{% endif %}
+                        <a href="{% url 'logout' %}" class="text-xs bg-red-600/90 hover:bg-red-700 text-white px-2 sm:px-2.5 py-1 sm:py-1.5 rounded font-medium transition whitespace-nowrap">
+                            {% if current_lang == 'te' %}లాగ్ అవుట్{% else %}<span class="sm:hidden">Exit</span><span class="hidden sm:inline">Sign Out</span>{% endif %}
                         </a>
                     {% else %}
-                        <a href="{% url 'login' %}" class="text-xs bg-amber-400 hover:bg-amber-300 text-blue-950 font-bold px-3 py-1.5 rounded shadow transition">
-                            {% if current_lang == 'te' %}లాగిన్{% else %}School Login{% endif %}
+                        <a href="{% url 'login' %}" class="text-xs bg-amber-400 hover:bg-amber-300 text-blue-950 font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded shadow transition whitespace-nowrap">
+                            {% if current_lang == 'te' %}లాగిన్{% else %}<span class="sm:hidden">Login</span><span class="hidden sm:inline">School Login</span>{% endif %}
                         </a>
                     {% endif %}
                 </div>
