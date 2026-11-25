@@ -45,4 +45,12 @@ urlpatterns = [
     path('district/schools/<str:udise_code>/export/excel/', views.district_export_school_excel_view, name='district_export_school_excel'),
     path('district/schools/<str:udise_code>/export/pdf/', views.district_export_school_pdf_view, name='district_export_school_pdf'),
     path('district/export/excel/', views.district_export_excel_view, name='district_export_excel'),
+
+    # Circulars & Photo Gallery (District Admin)
+    path('district/circulars/upload/', views.district_upload_circular_view, name='district_upload_circular'),
+    path('district/circulars/<int:circular_id>/toggle/', views.district_toggle_circular_view, name='district_toggle_circular'),
+    path('district/circulars/<int:circular_id>/delete/', views.district_delete_circular_view, name='district_delete_circular'),
+    path('district/gallery/upload/', views.district_upload_gallery_photos_view, name='district_upload_gallery_photos'),
+    path('district/gallery/<int:photo_id>/toggle/', views.district_toggle_gallery_photo_view, name='district_toggle_gallery_photo'),
+    path('district/gallery/<int:photo_id>/delete/', views.district_delete_gallery_photo_view, name='district_delete_gallery_photo'),
 ]

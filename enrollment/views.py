@@ -1,6 +1,8 @@
 import json
+import os
 from decimal import Decimal
 from datetime import datetime
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
@@ -8,11 +10,13 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db import transaction
+from django.utils import timezone
 from django.views.decorators.http import require_POST, require_GET
 from django.core.exceptions import ValidationError
 
 from .models import (
     Mandal, School, Student, UnitLeader, AuditLog, DistrictNotice,
+    Circular, GalleryPhoto,
     SchoolType, StudentDetailLevel, LeaderRole
 )
 from .excel_handler import (
@@ -72,17 +76,36 @@ def require_password_changed(view_func):
 def home_view(request):
     """
     Public Landing Page showcasing the Bharat Scouts & Guides motto,
-    aim to achieve, Sangareddy district leadership (Collector, DEO, District Secretary),
+    aim to achieve, official circulars, event photo gallery,
     Instagram official social handle & QR code, and institutional gateways.
     """
-    if request.user.is_authenticated:
+    if request.user.is_authenticated and request.GET.get('public') != '1':
         if request.user.is_superuser or request.user.is_staff:
             return redirect('district_dashboard')
         elif hasattr(request.user, 'school_profile'):
             return redirect('school_dashboard')
-    
+
     mandals = Mandal.objects.filter(schools__is_sanctioned=True).distinct().order_by('name')
-    return render(request, 'landing.html', {'mandals': mandals})
+    circulars = Circular.objects.filter(is_active=True)[:20]
+
+    gallery_events = []
+    events_map = {}
+    for gp in GalleryPhoto.objects.filter(is_active=True):
+        key = (gp.event_name or '').strip() or 'District Events'
+        if key not in events_map:
+            events_map[key] = {
+                'event_name': key,
+                'event_date': gp.event_date,
+                'photos': [],
+            }
+            gallery_events.append(events_map[key])
+        events_map[key]['photos'].append(gp)
+
+    return render(request, 'landing.html', {
+        'mandals': mandals,
+        'circulars': circulars,
+        'gallery_events': gallery_events,
+    })
 
 
 def login_view(request):
@@ -1239,7 +1262,6 @@ def district_admin_account_view(request):
     return redirect('district_dashboard')
 
 
-
 # ==========================================
 # DISTRICT ADMIN COMMAND CENTER
 # ==========================================
@@ -1297,12 +1319,19 @@ def district_dashboard_view(request):
     total_quota = total_boys_q + total_girls_q
     overall_pct = round((total_enr / total_quota * 100), 1) if total_quota > 0 else 0
 
+    # Circulars & Photo Gallery
+    circulars = Circular.objects.all()
+    gallery_photos = GalleryPhoto.objects.all()
+
     context = {
         'mandals': mandals,
         'schools': schools,
         'all_schools': all_schools,
         'mandal_stats': mandal_stats,
         'audit_logs': audit_logs,
+        'circulars': circulars,
+        'gallery_photos': gallery_photos,
+        'use_cloudinary': getattr(settings, 'USE_CLOUDINARY', False),
         'total_schools': total_schools,
         'total_boys_q': total_boys_q,
         'total_girls_q': total_girls_q,
@@ -1645,5 +1674,210 @@ def district_admin_account_view(request):
         ip_address=get_client_ip(request)
     )
     messages.success(request, f"Admin account updated successfully ({', '.join(changes)}).")
+    return redirect('district_dashboard')
+
+
+# ==========================================
+# CIRCULARS & PHOTO GALLERY ADMIN VIEWS
+# ==========================================
+
+MAX_CIRCULAR_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
+MAX_GALLERY_PHOTO_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
+MAX_GALLERY_BATCH_COUNT = 10
+ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'}
+
+
+@user_passes_test(is_district_admin_check, login_url='/login/')
+@require_POST
+def district_upload_circular_view(request):
+    title = request.POST.get('title', '').strip()
+    reference_number = request.POST.get('reference_number', '').strip()
+    description = request.POST.get('description', '').strip()
+    issued_date_str = request.POST.get('issued_date', '').strip()
+    uploaded_file = request.FILES.get('file')
+
+    if not title:
+        messages.error(request, "Circular title is required.")
+        return redirect('district_dashboard')
+
+    if not uploaded_file:
+        messages.error(request, "Please select a PDF file to upload.")
+        return redirect('district_dashboard')
+
+    ext = os.path.splitext(uploaded_file.name)[1].lower()
+    if ext != '.pdf':
+        messages.error(request, "Only PDF (.pdf) files are allowed for official circulars.")
+        return redirect('district_dashboard')
+
+    if uploaded_file.size > MAX_CIRCULAR_SIZE_BYTES:
+        messages.error(request, "Circular PDF exceeds the 10 MB size limit.")
+        return redirect('district_dashboard')
+
+    header = uploaded_file.read(5)
+    uploaded_file.seek(0)
+    if header != b'%PDF-':
+        messages.error(request, "Invalid PDF file. Please upload a genuine PDF document.")
+        return redirect('district_dashboard')
+
+    if issued_date_str:
+        try:
+            issued_date = datetime.strptime(issued_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            messages.error(request, "Invalid issued date format.")
+            return redirect('district_dashboard')
+    else:
+        issued_date = timezone.localdate()
+
+    try:
+        circular = Circular.objects.create(
+            title=title,
+            reference_number=reference_number,
+            description=description,
+            file=uploaded_file,
+            issued_date=issued_date,
+        )
+    except Exception as exc:
+        messages.error(request, f"Failed to upload circular: {exc}")
+        return redirect('district_dashboard')
+
+    AuditLog.objects.create(
+        user=request.user,
+        action="CIRCULAR_UPLOADED",
+        target_type="Circular",
+        target_id=str(circular.id),
+        description=f"Uploaded circular '{circular.title}' ({circular.reference_number or 'No Ref'}).",
+        ip_address=get_client_ip(request),
+    )
+    messages.success(request, f"Circular '{circular.title}' published to landing page.")
+    return redirect('district_dashboard')
+
+
+@user_passes_test(is_district_admin_check, login_url='/login/')
+@require_POST
+def district_toggle_circular_view(request, circular_id):
+    circular = get_object_or_404(Circular, id=circular_id)
+    circular.is_active = not circular.is_active
+    circular.save(update_fields=['is_active'])
+    state = "visible" if circular.is_active else "hidden"
+    messages.success(request, f"Circular '{circular.title}' is now {state} on the landing page.")
+    return redirect('district_dashboard')
+
+
+@user_passes_test(is_district_admin_check, login_url='/login/')
+@require_POST
+def district_delete_circular_view(request, circular_id):
+    circular = get_object_or_404(Circular, id=circular_id)
+    title = circular.title
+    try:
+        if circular.file:
+            circular.file.delete(save=False)
+    except Exception:
+        pass
+    circular.delete()
+    AuditLog.objects.create(
+        user=request.user,
+        action="CIRCULAR_DELETED",
+        target_type="Circular",
+        target_id=str(circular_id),
+        description=f"Deleted circular '{title}'.",
+        ip_address=get_client_ip(request),
+    )
+    messages.success(request, f"Circular '{title}' deleted.")
+    return redirect('district_dashboard')
+
+
+@user_passes_test(is_district_admin_check, login_url='/login/')
+@require_POST
+def district_upload_gallery_photos_view(request):
+    event_name = request.POST.get('event_name', '').strip()
+    title = request.POST.get('title', '').strip()
+    event_date_str = request.POST.get('event_date', '').strip()
+    photos = request.FILES.getlist('photos')
+
+    if not event_name:
+        messages.error(request, "Event name is required to group gallery photos.")
+        return redirect('district_dashboard')
+
+    if not photos:
+        messages.error(request, "Please select at least one photo to upload.")
+        return redirect('district_dashboard')
+
+    if len(photos) > MAX_GALLERY_BATCH_COUNT:
+        messages.error(request, f"You can upload up to {MAX_GALLERY_BATCH_COUNT} photos at a time.")
+        return redirect('district_dashboard')
+
+    event_date = None
+    if event_date_str:
+        try:
+            event_date = datetime.strptime(event_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            messages.error(request, "Invalid event date format.")
+            return redirect('district_dashboard')
+
+    for photo in photos:
+        ext = os.path.splitext(photo.name)[1].lower()
+        if ext not in ALLOWED_IMAGE_EXTENSIONS:
+            messages.error(request, f"'{photo.name}' is not a supported image (JPG, PNG, WEBP only).")
+            return redirect('district_dashboard')
+        if photo.size > MAX_GALLERY_PHOTO_SIZE_BYTES:
+            messages.error(request, f"'{photo.name}' exceeds the 5 MB photo size limit.")
+            return redirect('district_dashboard')
+
+    created_count = 0
+    try:
+        for photo in photos:
+            GalleryPhoto.objects.create(
+                event_name=event_name,
+                title=title,
+                event_date=event_date,
+                photo=photo,
+            )
+            created_count += 1
+    except Exception as exc:
+        messages.error(request, f"Failed to upload photos: {exc}")
+        return redirect('district_dashboard')
+
+    AuditLog.objects.create(
+        user=request.user,
+        action="GALLERY_UPLOADED",
+        target_type="GalleryPhoto",
+        description=f"Uploaded {created_count} photo(s) under event '{event_name}'.",
+        ip_address=get_client_ip(request),
+    )
+    messages.success(request, f"Uploaded {created_count} photo(s) to '{event_name}'.")
+    return redirect('district_dashboard')
+
+
+@user_passes_test(is_district_admin_check, login_url='/login/')
+@require_POST
+def district_toggle_gallery_photo_view(request, photo_id):
+    gp = get_object_or_404(GalleryPhoto, id=photo_id)
+    gp.is_active = not gp.is_active
+    gp.save(update_fields=['is_active'])
+    state = "visible" if gp.is_active else "hidden"
+    messages.success(request, f"Photo from '{gp.event_name}' is now {state} on the landing page.")
+    return redirect('district_dashboard')
+
+
+@user_passes_test(is_district_admin_check, login_url='/login/')
+@require_POST
+def district_delete_gallery_photo_view(request, photo_id):
+    gp = get_object_or_404(GalleryPhoto, id=photo_id)
+    event_name = gp.event_name
+    try:
+        if gp.photo:
+            gp.photo.delete(save=False)
+    except Exception:
+        pass
+    gp.delete()
+    AuditLog.objects.create(
+        user=request.user,
+        action="GALLERY_DELETED",
+        target_type="GalleryPhoto",
+        target_id=str(photo_id),
+        description=f"Deleted gallery photo from '{event_name}'.",
+        ip_address=get_client_ip(request),
+    )
+    messages.success(request, f"Photo from '{event_name}' deleted.")
     return redirect('district_dashboard')
 

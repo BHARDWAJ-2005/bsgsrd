@@ -1,9 +1,13 @@
 import io
 from decimal import Decimal
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth.models import User
 from django.urls import reverse
-from .models import District, Mandal, School, Student, UnitLeader, SchoolType, StudentDetailLevel, LeaderRole, AuditLog
+from PIL import Image
+import tempfile
+import shutil
+from .models import District, Mandal, School, Student, UnitLeader, SchoolType, StudentDetailLevel, LeaderRole, AuditLog, Circular, GalleryPhoto
 from .excel_handler import generate_school_excel_template, import_students_from_excel, export_school_excel
 from .pdf_generator import generate_school_pdf_report
 import openpyxl
@@ -748,4 +752,114 @@ class BSGPlatformTests(TestCase):
         self.assertRedirects(res_ok, reverse('school_dashboard'))
         self.user_coed.refresh_from_db()
         self.assertTrue(self.user_coed.check_password('MySchoolNew@2027'))
+
+    def test_circular_pdf_upload_toggle_delete_and_public_landing(self):
+        """Verify District Admin can publish PDF-only circulars and they appear on public landing page."""
+        temp_media = tempfile.mkdtemp()
+        try:
+            with override_settings(
+                MEDIA_ROOT=temp_media,
+                USE_CLOUDINARY=False,
+                STORAGES={
+                    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+                    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+                },
+            ):
+                # 1. Non-admin cannot upload
+                pdf_file = SimpleUploadedFile("notice.pdf", b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF", content_type="application/pdf")
+                res_unauth = self.client.post(reverse('district_upload_circular'), {
+                    'title': 'Unauthorized Circular',
+                    'file': pdf_file,
+                })
+                self.assertEqual(res_unauth.status_code, 302)
+                self.assertEqual(Circular.objects.count(), 0)
+
+                # 2. Admin rejects non-PDF
+                self.client.login(username="admin", password="Admin@Sangareddy2026")
+                bad_file = SimpleUploadedFile("image.jpg", b"not-a-pdf", content_type="image/jpeg")
+                self.client.post(reverse('district_upload_circular'), {
+                    'title': 'Invalid File Circular',
+                    'file': bad_file,
+                })
+                self.assertEqual(Circular.objects.count(), 0)
+
+                # 3. Admin uploads valid PDF
+                valid_pdf = SimpleUploadedFile("guidelines_2026.pdf", b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF", content_type="application/pdf")
+                res_ok = self.client.post(reverse('district_upload_circular'), {
+                    'title': 'District Enrollment Guidelines 2026',
+                    'reference_number': 'Rc.No. BSG/SRD/2026/01',
+                    'issued_date': '2026-11-25',
+                    'file': valid_pdf,
+                })
+                self.assertRedirects(res_ok, reverse('district_dashboard'))
+                self.assertEqual(Circular.objects.count(), 1)
+                circular = Circular.objects.first()
+
+                # 4. Public (logged out) sees circular on landing page
+                self.client.logout()
+                res_home = self.client.get(reverse('home'))
+                self.assertEqual(res_home.status_code, 200)
+                self.assertContains(res_home, 'District Enrollment Guidelines 2026')
+                self.assertContains(res_home, 'Rc.No. BSG/SRD/2026/01')
+
+                # 5. Admin toggles hidden -> disappears from landing page
+                self.client.login(username="admin", password="Admin@Sangareddy2026")
+                self.client.post(reverse('district_toggle_circular', kwargs={'circular_id': circular.id}))
+                self.client.logout()
+                res_home_hidden = self.client.get(reverse('home'))
+                self.assertNotContains(res_home_hidden, 'District Enrollment Guidelines 2026')
+
+                # 6. Admin deletes circular
+                self.client.login(username="admin", password="Admin@Sangareddy2026")
+                self.client.post(reverse('district_delete_circular', kwargs={'circular_id': circular.id}))
+                self.assertEqual(Circular.objects.count(), 0)
+        finally:
+            shutil.rmtree(temp_media, ignore_errors=True)
+
+    def test_gallery_photos_grouped_by_event_and_public_landing(self):
+        """Verify District Admin can upload event photos and public landing groups them by event name."""
+        temp_media = tempfile.mkdtemp()
+        try:
+            with override_settings(
+                MEDIA_ROOT=temp_media,
+                USE_CLOUDINARY=False,
+                STORAGES={
+                    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+                    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+                },
+            ):
+                def make_test_image(name):
+                    buf = io.BytesIO()
+                    Image.new('RGB', (100, 80), color='blue').save(buf, format='JPEG')
+                    buf.seek(0)
+                    return SimpleUploadedFile(name, buf.read(), content_type='image/jpeg')
+
+                self.client.login(username="admin", password="Admin@Sangareddy2026")
+                res_upload = self.client.post(reverse('district_upload_gallery_photos'), {
+                    'event_name': 'District Rally 2026',
+                    'event_date': '2026-11-20',
+                    'title': 'March Past',
+                    'photos': [make_test_image('rally1.jpg'), make_test_image('rally2.jpg')],
+                })
+                self.assertRedirects(res_upload, reverse('district_dashboard'))
+                self.assertEqual(GalleryPhoto.objects.count(), 2)
+
+                # Public (logged out) sees event group & photos on landing page
+                self.client.logout()
+                res_home = self.client.get(reverse('home'))
+                self.assertEqual(res_home.status_code, 200)
+                self.assertContains(res_home, 'District Rally 2026')
+                self.assertContains(res_home, '2 photos')
+
+                # Admin toggles & deletes one photo
+                photo = GalleryPhoto.objects.first()
+                self.client.login(username="admin", password="Admin@Sangareddy2026")
+                self.client.post(reverse('district_toggle_gallery_photo', kwargs={'photo_id': photo.id}))
+                photo.refresh_from_db()
+                self.assertFalse(photo.is_active)
+
+                self.client.post(reverse('district_delete_gallery_photo', kwargs={'photo_id': photo.id}))
+                self.assertEqual(GalleryPhoto.objects.count(), 1)
+        finally:
+            shutil.rmtree(temp_media, ignore_errors=True)
 

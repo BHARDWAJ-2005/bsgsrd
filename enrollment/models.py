@@ -1,7 +1,17 @@
 from django.db import models
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from decimal import Decimal
+
+
+def get_circular_storage():
+    """Use Cloudinary raw storage for PDF circulars when configured, else default local storage."""
+    if getattr(settings, 'USE_CLOUDINARY', False):
+        from cloudinary_storage.storage import RawMediaCloudinaryStorage
+        return RawMediaCloudinaryStorage()
+    from django.core.files.storage import default_storage
+    return default_storage
 
 class District(models.Model):
     name = models.CharField(max_length=100, default='Sangareddy')
@@ -320,3 +330,34 @@ class DistrictNotice(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Circular(models.Model):
+    title = models.CharField(max_length=200)
+    reference_number = models.CharField(max_length=100, blank=True)
+    description = models.TextField(blank=True)
+    file = models.FileField(upload_to='circulars/', storage=get_circular_storage)
+    issued_date = models.DateField()
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-issued_date', '-created_at']
+
+    def __str__(self):
+        return f"{self.title} ({self.issued_date})"
+
+
+class GalleryPhoto(models.Model):
+    event_name = models.CharField(max_length=120, db_index=True)
+    title = models.CharField(max_length=200, blank=True)
+    event_date = models.DateField(null=True, blank=True)
+    photo = models.ImageField(upload_to='gallery/')
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-event_date', '-created_at']
+
+    def __str__(self):
+        return f"{self.event_name} - {self.title or 'Photo'}"

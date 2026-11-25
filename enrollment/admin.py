@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import District, Mandal, School, Student, UnitLeader, AuditLog, DistrictNotice
+from .models import District, Mandal, School, Student, UnitLeader, AuditLog, DistrictNotice, Circular, GalleryPhoto
 
 @admin.register(District)
 class DistrictAdmin(admin.ModelAdmin):
@@ -39,3 +39,17 @@ class AuditLogAdmin(admin.ModelAdmin):
 class DistrictNoticeAdmin(admin.ModelAdmin):
     list_display = ('title', 'is_active', 'created_at')
     list_filter = ('is_active',)
+
+
+@admin.register(Circular)
+class CircularAdmin(admin.ModelAdmin):
+    list_display = ('title', 'reference_number', 'issued_date', 'is_active', 'created_at')
+    list_filter = ('is_active', 'issued_date')
+    search_fields = ('title', 'reference_number')
+
+
+@admin.register(GalleryPhoto)
+class GalleryPhotoAdmin(admin.ModelAdmin):
+    list_display = ('event_name', 'title', 'event_date', 'is_active', 'created_at')
+    list_filter = ('is_active', 'event_name')
+    search_fields = ('event_name', 'title')

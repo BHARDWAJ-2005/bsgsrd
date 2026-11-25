@@ -9,6 +9,16 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load local .env file if present (never committed to git)
+_env_path = BASE_DIR / '.env'
+if _env_path.exists():
+    for _line in _env_path.read_text(encoding='utf-8').splitlines():
+        _line = _line.strip()
+        if not _line or _line.startswith('#') or '=' not in _line:
+            continue
+        _k, _v = _line.split('=', 1)
+        os.environ.setdefault(_k.strip(), _v.strip().strip('"').strip("'"))
+
 # ── Security ────────────────────────────────────────────────────────────────
 SECRET_KEY = os.environ.get('SECRET_KEY', '_Xzcvapy!ZtjRE2AVQ#sI=52e5t^YM#R6QmyokzJ5dF(VL+BiViYQf(THu(bMt+E')
 
@@ -71,6 +81,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cloudinary_storage',
+    'cloudinary',
     'enrollment.apps.EnrollmentConfig',
 ]
 
@@ -137,9 +149,36 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# ── Media & Cloud Storage (Cloudinary if configured, else local media/) ──────
+CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '').strip()
+CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY', '').strip()
+CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET', '').strip()
+CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '').strip()
+
+if CLOUDINARY_URL and not (CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET):
+    # Parse cloudinary://api_key:api_secret@cloud_name so django-cloudinary-storage has all keys
+    from urllib.parse import urlparse
+    _parsed = urlparse(CLOUDINARY_URL)
+    if _parsed.scheme == 'cloudinary':
+        CLOUDINARY_API_KEY = _parsed.username or ''
+        CLOUDINARY_API_SECRET = _parsed.password or ''
+        CLOUDINARY_CLOUD_NAME = _parsed.hostname or ''
+
+USE_CLOUDINARY = bool(CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET)
+
+if USE_CLOUDINARY:
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
+        'API_KEY': CLOUDINARY_API_KEY,
+        'API_SECRET': CLOUDINARY_API_SECRET,
+    }
+    _DEFAULT_MEDIA_BACKEND = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+else:
+    _DEFAULT_MEDIA_BACKEND = 'django.core.files.storage.FileSystemStorage'
+
 STORAGES = {
     "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "BACKEND": _DEFAULT_MEDIA_BACKEND,
     },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
