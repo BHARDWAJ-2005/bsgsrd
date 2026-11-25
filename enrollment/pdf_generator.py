@@ -322,8 +322,8 @@ def generate_school_pdf_report(school: School) -> io.BytesIO:
         if ldr.hip and ldr.gender == 'FEMALE': m.append(f"Hip {ldr.hip}")
         if ldr.shoulder: m.append(f"Sh {ldr.shoulder}")
         if ldr.sleeve: m.append(f"Sleeve {ldr.sleeve}")
-        if ldr.top_length: m.append(f"Shirt {ldr.top_length}" if ldr.gender == 'MALE' else f"Kameez {ldr.top_length}")
-        if ldr.bottom_length: m.append(f"Pant {ldr.bottom_length}" if ldr.gender == 'MALE' else f"Salwar {ldr.bottom_length}")
+        if ldr.top_length: m.append(f"Shirt {ldr.top_length}")
+        if ldr.bottom_length: m.append(f"Pant {ldr.bottom_length}")
         if ldr.shoe_size: m.append(f"Shoe {ldr.shoe_size}")
         return ", ".join(m)
 
@@ -501,8 +501,8 @@ def generate_school_pdf_report(school: School) -> io.BytesIO:
             Paragraph("Hip", th_style),
             Paragraph("Shoulder", th_style),
             Paragraph("Sleeve", th_style),
-            Paragraph("Kameez", th_style),
-            Paragraph("Salwar/Skirt", th_style),
+            Paragraph("Shirt len.", th_style),
+            Paragraph("Pant len.", th_style),
             Paragraph("Shoe", th_style),
             Paragraph("Details", th_style)
         ]

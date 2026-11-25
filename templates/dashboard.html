@@ -228,13 +228,13 @@
                                     {% if s.gender == 'BOY' %}
                                         Ch:{{ s.chest|default:"-" }} · W:{{ s.waist|default:"-" }} · Sh:{{ s.shoulder|default:"-" }}
                                     {% else %}
-                                        Bst:{{ s.bust|default:"-" }} · W:{{ s.waist|default:"-" }} · Km:{{ s.kameez_length|default:"-" }}
+                                        Bst:{{ s.bust|default:"-" }} · W:{{ s.waist|default:"-" }} · ShL:{{ s.kameez_length|default:"-" }}
                                     {% endif %}
                                     <div class="tooltip-content">
                                         {% if s.gender == 'BOY' %}
                                             Chest: {{ s.chest }}", Waist: {{ s.waist }}", Neck: {{ s.neck }}", Shoulder: {{ s.shoulder }}", Sleeve: {{ s.sleeve }}", Shirt Length: {{ s.shirt_length }}", Pant Length: {{ s.pant_length }}"
                                         {% else %}
-                                            Bust: {{ s.bust }}", Waist: {{ s.waist }}", Hip: {{ s.hip }}", Shoulder: {{ s.shoulder }}", Sleeve: {{ s.sleeve }}", Kameez: {{ s.kameez_length }}", Salwar: {{ s.salwar_length }}"
+                                            Bust: {{ s.bust }}", Waist: {{ s.waist }}", Hip: {{ s.hip }}", Shoulder: {{ s.shoulder }}", Sleeve: {{ s.sleeve }}", Shirt Length: {{ s.kameez_length }}", Pant Length: {{ s.salwar_length }}"
                                         {% endif %}
                                         {% if s.dob %}<br/>DOB: {{ s.dob }}{% endif %}
                                         {% if s.parent_mobile %}<br/>Mobile: {{ s.parent_mobile }}{% endif %}
@@ -409,7 +409,7 @@
             <!-- GIRLS Tailoring Measurements (Inches, 0.5 steps) -->
             <div id="girls-measurements-container" class="brief-field-group hidden p-4 bg-emerald-50/70 rounded-xl border border-emerald-200">
                 <div class="text-xs font-bold text-emerald-900 mb-2 flex items-center justify-between">
-                    <span>Girls Tailoring Measurements (Kameez & Salwar/Skirt in Inches)</span>
+                    <span>Girls Tailoring Measurements (Shirt & Pant in Inches)</span>
                     <span class="text-[10px] text-emerald-600 font-normal">0.5 inch increments accepted</span>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -434,11 +434,11 @@
                         <input type="number" step="0.5" min="10" max="35" name="sleeve_girls" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
                     </div>
                     <div>
-                        <label class="text-[11px] text-slate-600 block">Kameez Length (in)</label>
+                        <label class="text-[11px] text-slate-600 block">Shirt Length (in)</label>
                         <input type="number" step="0.5" min="15" max="48" name="kameez_length" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
                     </div>
                     <div>
-                        <label class="text-[11px] text-slate-600 block">Salwar/Skirt (in)</label>
+                        <label class="text-[11px] text-slate-600 block">Pant Length (in)</label>
                         <input type="number" step="0.5" min="15" max="48" name="salwar_length" class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded text-xs">
                     </div>
                 </div>
@@ -584,11 +584,11 @@
                         <input type="number" step="0.5" id="edit_sleeve_g" name="sleeve" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs">
                     </div>
                     <div>
-                        <label class="text-[10px] text-slate-600 block">Kameez Length</label>
+                        <label class="text-[10px] text-slate-600 block">Shirt Length</label>
                         <input type="number" step="0.5" id="edit_kameez_length" name="kameez_length" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs">
                     </div>
                     <div>
-                        <label class="text-[10px] text-slate-600 block">Salwar Length</label>
+                        <label class="text-[10px] text-slate-600 block">Pant Length</label>
                         <input type="number" step="0.5" id="edit_salwar_length" name="salwar_length" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs">
                     </div>
                 </div>
@@ -695,8 +695,8 @@
                                     <div><span class="text-slate-500">Neck:</span> <b class="text-slate-800">{{ l.neck }}"</b></div>
                                     {% endif %}
                                     <div><span class="text-slate-500">Sleeve:</span> <b class="text-slate-800">{% if l.sleeve %}{{ l.sleeve }}"{% else %}—{% endif %}</b></div>
-                                    <div><span class="text-slate-500">{% if l.gender == 'MALE' %}Shirt Length{% else %}Kameez Length{% endif %}:</span> <b class="text-slate-800">{% if l.top_length %}{{ l.top_length }}"{% else %}—{% endif %}</b></div>
-                                    <div><span class="text-slate-500">{% if l.gender == 'MALE' %}Pant Length{% else %}Salwar Length{% endif %}:</span> <b class="text-slate-800">{% if l.bottom_length %}{{ l.bottom_length }}"{% else %}—{% endif %}</b></div>
+                                    <div><span class="text-slate-500">Shirt Length:</span> <b class="text-slate-800">{% if l.top_length %}{{ l.top_length }}"{% else %}—{% endif %}</b></div>
+                                    <div><span class="text-slate-500">Pant Length:</span> <b class="text-slate-800">{% if l.bottom_length %}{{ l.bottom_length }}"{% else %}—{% endif %}</b></div>
                                     {% if l.gender == 'FEMALE' and l.hip %}
                                     <div><span class="text-slate-500">Hip:</span> <b class="text-slate-800">{{ l.hip }}"</b></div>
                                     {% endif %}

@@ -51,8 +51,8 @@ GIRLS_COLUMNS = [
     ("Hip (in)", False),
     ("Shoulder (in)", False),
     ("Sleeve (in)", False),
-    ("Kameez Length (in)", False),
-    ("Salwar Length (in)", False),
+    ("Shirt Length (in)", False),
+    ("Pant Length (in)", False),
 ]
 
 

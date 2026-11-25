@@ -77,7 +77,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 modeShortBtn.classList.remove('bg-blue-600', 'text-white', 'shadow');
                 modeShortBtn.classList.add('bg-white', 'text-slate-700');
             }
-            briefFields.forEach(el => el.classList.remove('hidden'));
+            briefFields.forEach(el => {
+                if (el.id !== 'boys-measurements-container' && el.id !== 'girls-measurements-container') {
+                    el.classList.remove('hidden');
+                }
+            });
         } else {
             if (modeShortBtn) {
                 modeShortBtn.classList.add('bg-blue-600', 'text-white', 'shadow');
@@ -89,15 +93,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             briefFields.forEach(el => el.classList.add('hidden'));
         }
-    }
-
-    if (modeShortBtn && modeBriefBtn) {
-        modeShortBtn.addEventListener('click', () => setFormMode('SHORT'));
-        modeBriefBtn.addEventListener('click', () => setFormMode('BRIEF'));
-
-        // Load saved mode or default to SHORT
-        const savedMode = localStorage.getItem('bsg_enrollment_mode') || 'SHORT';
-        setFormMode(savedMode);
+        toggleGenderMeasurements();
     }
 
     // 3. Gender Toggle for Student Form (Boys vs Girls measurements)
@@ -107,6 +103,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function toggleGenderMeasurements() {
         if (!genderSelect) return;
+        const isBrief = !modeInput || modeInput.value === 'BRIEF';
+        if (!isBrief) {
+            if (boysMeasContainer) boysMeasContainer.classList.add('hidden');
+            if (girlsMeasContainer) girlsMeasContainer.classList.add('hidden');
+            return;
+        }
         const gender = genderSelect.value;
         if (gender === 'BOY') {
             if (boysMeasContainer) boysMeasContainer.classList.remove('hidden');
@@ -118,6 +120,15 @@ document.addEventListener('DOMContentLoaded', function () {
             if (boysMeasContainer) boysMeasContainer.classList.add('hidden');
             if (girlsMeasContainer) girlsMeasContainer.classList.add('hidden');
         }
+    }
+
+    if (modeShortBtn && modeBriefBtn) {
+        modeShortBtn.addEventListener('click', () => setFormMode('SHORT'));
+        modeBriefBtn.addEventListener('click', () => setFormMode('BRIEF'));
+
+        // Load saved mode or default to SHORT
+        const savedMode = localStorage.getItem('bsg_enrollment_mode') || 'SHORT';
+        setFormMode(savedMode);
     }
 
     if (genderSelect) {
@@ -268,8 +279,8 @@ function handleGenderSwitch(gender) {
 
     if (gender === 'FEMALE') {
         if (chestBustLbl) chestBustLbl.textContent = 'Bust';
-        if (topLbl) topLbl.textContent = 'Kameez Length';
-        if (botLbl) botLbl.textContent = 'Salwar Length';
+        if (topLbl) topLbl.textContent = 'Shirt Length';
+        if (botLbl) botLbl.textContent = 'Pant Length';
         if (neckBox) neckBox.classList.add('hidden');
         if (hipBox) hipBox.classList.remove('hidden');
     } else {
