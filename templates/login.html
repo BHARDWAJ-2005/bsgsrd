@@ -20,13 +20,13 @@
 
     <!-- Header Card -->
     <div class="text-center mb-4">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-900 text-amber-400 text-3xl shadow-lg border-2 border-amber-400 mb-3">
+        <div id="login-portal-icon" class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-900 text-amber-400 text-3xl shadow-lg border-2 border-amber-400 mb-3 transition-colors">
             ⚜
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold text-blue-950 tracking-tight">
+        <h1 id="login-portal-title" class="text-2xl sm:text-3xl font-extrabold text-blue-950 tracking-tight">
             {% if current_lang == 'te' %}పాఠశాల లాగిన్ పోర్టల్{% else %}School Login Portal{% endif %}
         </h1>
-        <p class="text-xs sm:text-sm text-slate-600 mt-1">
+        <p id="login-portal-subtitle" class="text-xs sm:text-sm text-slate-600 mt-1">
             {% if current_lang == 'te' %}
                 భారత్ స్కౌట్స్ & గైడ్స్ గుర్తింపు పొందిన పాఠశాలల నమోదు పోర్టల్, సంగారెడ్డి జిల్లా
             {% else %}
@@ -157,7 +157,7 @@
                     <span class="text-emerald-600 font-bold">🔒</span>
                     <span class="font-medium">Official Government Portal · Authenticated Session</span>
                 </div>
-                <button type="button" onclick="autoSelectSampleSchool()" class="text-slate-400 hover:text-blue-700 text-[11px] hover:underline font-mono" title="Quick sample selection for testing">
+                <button type="button" id="quick-sample-btn" onclick="autoSelectSampleSchool()" class="text-slate-400 hover:text-blue-700 text-[11px] hover:underline font-mono" title="Quick sample selection for testing">
                     Quick Sample Select
                 </button>
             </div>
@@ -187,6 +187,11 @@ function switchLoginTab(tab) {
     const adminForm = document.getElementById('admin-login-form');
     const schoolTabBtn = document.getElementById('tab-school-btn');
     const adminTabBtn = document.getElementById('tab-admin-btn');
+    const portalTitle = document.getElementById('login-portal-title');
+    const portalSubtitle = document.getElementById('login-portal-subtitle');
+    const portalIcon = document.getElementById('login-portal-icon');
+    const quickSampleBtn = document.getElementById('quick-sample-btn');
+    const isTelugu = "{{ current_lang }}" === "te";
 
     if (tab === 'admin') {
         schoolForm.classList.add('hidden');
@@ -195,6 +200,24 @@ function switchLoginTab(tab) {
         adminTabBtn.classList.remove('text-slate-500');
         schoolTabBtn.classList.remove('border-b-2', 'border-blue-800', 'text-blue-900', 'bg-white');
         schoolTabBtn.classList.add('text-slate-500');
+
+        if (portalTitle) {
+            portalTitle.textContent = isTelugu ? 'జిల్లా అడ్మిన్ లాగిన్' : 'District Admin Login';
+            portalTitle.classList.remove('text-blue-950');
+            portalTitle.classList.add('text-emerald-950');
+        }
+        if (portalSubtitle) {
+            portalSubtitle.textContent = isTelugu
+                ? 'భారత్ స్కౌట్స్ & గైడ్స్ జిల్లా అడ్మిన్ కమాండ్ సెంటర్, సంగారెడ్డి జిల్లా'
+                : 'Bharat Scouts & Guides District Administration Command Center, Sangareddy District';
+        }
+        if (portalIcon) {
+            portalIcon.textContent = '🏛️';
+            portalIcon.classList.remove('bg-blue-900', 'border-amber-400');
+            portalIcon.classList.add('bg-emerald-800', 'border-emerald-400');
+        }
+        if (quickSampleBtn) quickSampleBtn.classList.add('hidden');
+        document.title = 'District Admin Login | Bharat Scouts & Guides Sangareddy';
     } else {
         adminForm.classList.add('hidden');
         schoolForm.classList.remove('hidden');
@@ -202,6 +225,24 @@ function switchLoginTab(tab) {
         schoolTabBtn.classList.remove('text-slate-500');
         adminTabBtn.classList.remove('border-b-2', 'border-emerald-700', 'text-emerald-900', 'bg-white');
         adminTabBtn.classList.add('text-slate-500');
+
+        if (portalTitle) {
+            portalTitle.textContent = isTelugu ? 'పాఠశాల లాగిన్ పోర్టల్' : 'School Login Portal';
+            portalTitle.classList.remove('text-emerald-950');
+            portalTitle.classList.add('text-blue-950');
+        }
+        if (portalSubtitle) {
+            portalSubtitle.textContent = isTelugu
+                ? 'భారత్ స్కౌట్స్ & గైడ్స్ గుర్తింపు పొందిన పాఠశాలల నమోదు పోర్టల్, సంగారెడ్డి జిల్లా'
+                : 'Bharat Scouts & Guides Sanctioned Schools Enrollment Portal, Sangareddy District';
+        }
+        if (portalIcon) {
+            portalIcon.textContent = '⚜';
+            portalIcon.classList.remove('bg-emerald-800', 'border-emerald-400');
+            portalIcon.classList.add('bg-blue-900', 'border-amber-400');
+        }
+        if (quickSampleBtn) quickSampleBtn.classList.remove('hidden');
+        document.title = 'School Login | Bharat Scouts & Guides Sangareddy';
     }
 }
 
