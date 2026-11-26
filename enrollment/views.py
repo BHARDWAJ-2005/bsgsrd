@@ -586,6 +586,22 @@ def school_dashboard_view(request):
     return render(request, 'dashboard.html', context)
 
 
+def _student_form_response(request, success, message, status=200, extra=None):
+    """Return JSON for AJAX/API clients, or redirect back to dashboard for plain browser form POSTs."""
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    wants_html = 'text/html' in request.headers.get('Accept', '')
+    if not is_ajax and wants_html:
+        if success:
+            messages.success(request, message)
+        else:
+            messages.error(request, message)
+        return redirect('school_dashboard')
+    payload = {'success': success, 'message': message}
+    if extra:
+        payload.update(extra)
+    return JsonResponse(payload, status=status)
+
+
 @login_required
 @require_password_changed
 @require_POST
@@ -596,7 +612,7 @@ def enroll_student_view(request):
     """
     school = getattr(request.user, 'school_profile', None)
     if not school:
-        return JsonResponse({'success': False, 'message': 'Unauthorized school profile.'}, status=403)
+        return _student_form_response(request, False, 'Unauthorized school profile.', status=403)
 
     gender = request.POST.get('gender', '').strip()
     name = request.POST.get('name', '').strip()
@@ -609,25 +625,25 @@ def enroll_student_view(request):
 
     # Basic validations
     if not name or not father_name or not class_val or not height_val or not uniform_size or not shoe_size:
-        return JsonResponse({'success': False, 'message': 'Please fill all required fields marked with *.'}, status=400)
+        return _student_form_response(request, False, 'Please fill all required fields marked with *.', status=400)
 
     try:
         class_level = int(class_val)
     except ValueError:
-        return JsonResponse({'success': False, 'message': 'Invalid Class.'}, status=400)
+        return _student_form_response(request, False, 'Invalid Class.', status=400)
 
     try:
         height_cm = Decimal(height_val)
         if height_cm < 90 or height_cm > 220:
-            return JsonResponse({'success': False, 'message': 'Height must be between 90 and 220 cm.'}, status=400)
+            return _student_form_response(request, False, 'Height must be between 90 and 220 cm.', status=400)
     except Exception:
-        return JsonResponse({'success': False, 'message': 'Invalid Height in cm.'}, status=400)
+        return _student_form_response(request, False, 'Invalid Height in cm.', status=400)
 
     if gender not in school.allowed_genders():
-        return JsonResponse({'success': False, 'message': f"This school cannot enroll {gender}s based on school category."}, status=400)
+        return _student_form_response(request, False, f"This school cannot enroll {gender}s based on school category.", status=400)
 
     if class_level not in school.allowed_classes():
-        return JsonResponse({'success': False, 'message': f"Class {class_level} is not permitted for this school category."}, status=400)
+        return _student_form_response(request, False, f"Class {class_level} is not permitted for this school category.", status=400)
 
     # Optional BRIEF details
     dob = None
@@ -662,9 +678,9 @@ def enroll_student_view(request):
 
             # Check quota
             if gender == 'BOY' and school_locked.boys_enrolled_count() >= school_locked.boys_quota:
-                return JsonResponse({'success': False, 'message': f"Boys Quota is Full ({school_locked.boys_quota}/{school_locked.boys_quota})!"}, status=400)
+                return _student_form_response(request, False, f"Boys Quota is Full ({school_locked.boys_quota}/{school_locked.boys_quota})!", status=400)
             elif gender == 'GIRL' and school_locked.girls_enrolled_count() >= school_locked.girls_quota:
-                return JsonResponse({'success': False, 'message': f"Girls Quota is Full ({school_locked.girls_quota}/{school_locked.girls_quota})!"}, status=400)
+                return _student_form_response(request, False, f"Girls Quota is Full ({school_locked.girls_quota}/{school_locked.girls_quota})!", status=400)
 
             # Duplicate / Idempotency check
             existing = Student.objects.filter(
@@ -676,10 +692,12 @@ def enroll_student_view(request):
             ).first()
 
             if existing:
-                return JsonResponse({
-                    'success': False,
-                    'message': f"Student '{name}' (Father: '{father_name}') in Class {class_level} is already enrolled in this school."
-                }, status=400)
+                return _student_form_response(
+                    request,
+                    False,
+                    f"Student '{name}' (Father: '{father_name}') in Class {class_level} is already enrolled in this school.",
+                    status=400
+                )
 
             student = Student(
                 school=school_locked,
@@ -726,17 +744,19 @@ def enroll_student_view(request):
                 ip_address=get_client_ip(request)
             )
 
-        messages.success(request, f"Student '{student.name}' enrolled successfully!")
-        return JsonResponse({
-            'success': True,
-            'message': f"Student '{student.name}' enrolled successfully!",
-            'student_id': student.id
-        })
+        if 'text/html' not in request.headers.get('Accept', '') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            messages.success(request, f"Student '{student.name}' enrolled successfully!")
+        return _student_form_response(
+            request,
+            True,
+            f"Student '{student.name}' enrolled successfully!",
+            extra={'student_id': student.id}
+        )
 
     except ValidationError as ve:
-        return JsonResponse({'success': False, 'message': str(ve)}, status=400)
+        return _student_form_response(request, False, str(ve), status=400)
     except Exception as e:
-        return JsonResponse({'success': False, 'message': f"Server error: {str(e)}"}, status=500)
+        return _student_form_response(request, False, f"Server error: {str(e)}", status=500)
 
 
 @login_required
@@ -792,13 +812,13 @@ def edit_student_view(request, student_id):
     detail_mode = request.POST.get('detail_level', student.detail_level).strip()
 
     if not name or not father_name or not class_val or not height_val or not uniform_size or not shoe_size:
-        return JsonResponse({'success': False, 'message': 'Missing required fields.'}, status=400)
+        return _student_form_response(request, False, 'Missing required fields.', status=400)
 
     try:
         class_level = int(class_val)
         height_cm = Decimal(height_val)
     except Exception:
-        return JsonResponse({'success': False, 'message': 'Invalid numerical values.'}, status=400)
+        return _student_form_response(request, False, 'Invalid numerical values.', status=400)
 
     student.name = name
     student.father_name = father_name
@@ -851,10 +871,11 @@ def edit_student_view(request, student_id):
             description=f"Updated details for student '{student.name}', Class {student.class_level}.",
             ip_address=get_client_ip(request)
         )
-        messages.success(request, f"Student '{student.name}' updated successfully!")
-        return JsonResponse({'success': True, 'message': 'Student updated successfully.'})
+        if 'text/html' not in request.headers.get('Accept', '') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            messages.success(request, f"Student '{student.name}' updated successfully!")
+        return _student_form_response(request, True, f"Student '{student.name}' updated successfully!")
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+        return _student_form_response(request, False, str(e), status=400)
 
 
 @login_required

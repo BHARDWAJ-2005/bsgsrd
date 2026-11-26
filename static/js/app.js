@@ -187,6 +187,58 @@ document.addEventListener('DOMContentLoaded', function () {
             refreshLiveStats();
         }
     }, 45000);
+
+    // 6. AJAX Submit for Enroll & Edit Student Forms (prevents raw JSON page)
+    function attachStudentFormAjax(formId) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const origText = submitBtn ? submitBtn.innerHTML : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Saving...';
+            }
+
+            let errBox = form.querySelector('.ajax-form-error');
+            if (!errBox) {
+                errBox = document.createElement('div');
+                errBox.className = 'ajax-form-error hidden p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-semibold';
+                form.prepend(errBox);
+            }
+            errBox.classList.add('hidden');
+            errBox.textContent = '';
+
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(async res => {
+                    const data = await res.json().catch(() => null);
+                    if (!res.ok || !data || !data.success) {
+                        throw new Error((data && data.message) || 'Could not save student. Please check your inputs.');
+                    }
+                    window.location.reload();
+                })
+                .catch(err => {
+                    errBox.textContent = err.message || 'Network error. Please try again.';
+                    errBox.classList.remove('hidden');
+                    errBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = origText;
+                    }
+                });
+        });
+    }
+
+    attachStudentFormAjax('enroll_student_form');
+    attachStudentFormAjax('edit_student_form');
 });
 
 // Global Modal Handlers
