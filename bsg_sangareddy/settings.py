@@ -81,8 +81,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'cloudinary_storage',
-    'cloudinary',
+    # cloudinary_storage and cloudinary are added ONLY when keys are set
+    # (see the Cloudinary config block below — it appends to INSTALLED_APPS).
     'enrollment.apps.EnrollmentConfig',
 ]
 
@@ -128,7 +128,9 @@ if DATABASE_URL:
             DATABASE_URL,
             conn_max_age=600,
             conn_health_checks=True,
-            ssl_require=True,
+            # Do NOT pass ssl_require=True — Neon URL already contains
+            # sslmode=require&channel_binding=require; double-applying SSL
+            # causes a psycopg2 "conflicting options" error at startup.
         )
     }
 else:
@@ -179,6 +181,11 @@ if CLOUDINARY_URL and not (CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOU
 USE_CLOUDINARY = bool(CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET)
 
 if USE_CLOUDINARY:
+    # Only register cloudinary apps when keys are present — importing
+    # cloudinary_storage without CLOUDINARY_STORAGE configured causes a
+    # startup crash (ImproperlyConfigured) which produces Internal Server Error.
+    INSTALLED_APPS.insert(INSTALLED_APPS.index('enrollment.apps.EnrollmentConfig'), 'cloudinary_storage')
+    INSTALLED_APPS.insert(INSTALLED_APPS.index('enrollment.apps.EnrollmentConfig'), 'cloudinary')
     CLOUDINARY_STORAGE = {
         'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
         'API_KEY': CLOUDINARY_API_KEY,
