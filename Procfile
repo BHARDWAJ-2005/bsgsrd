@@ -1,1 +1,1 @@
-web: gunicorn bsg_sangareddy.wsgi:application --log-file - --timeout 120 --workers 2
+web: gunicorn bsg_sangareddy.wsgi:application --log-file - --workers 2 --threads 4 --timeout 120 --keep-alive 5

@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     buildCommand: "bash build.sh"
-    startCommand: "gunicorn bsg_sangareddy.wsgi:application"
+    startCommand: "gunicorn bsg_sangareddy.wsgi:application --workers 2 --threads 4 --timeout 120 --keep-alive 5"
     domains:
       - bsgsrd.indevs.in
     envVars:

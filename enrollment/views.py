@@ -187,22 +187,33 @@ def login_view(request):
 @require_GET
 def api_schools_by_mandal(request):
     """Endpoint for cascading dropdown: returns only sanctioned schools under the selected mandal."""
+    from collections import Counter
+    from django.db.models import Count
+
     mandal_id = request.GET.get('mandal_id')
     if not mandal_id:
         return JsonResponse({'schools': []})
 
-    schools = School.objects.filter(mandal_id=mandal_id, is_sanctioned=True).order_by('name')
+    schools = list(
+        School.objects
+        .filter(mandal_id=mandal_id, is_sanctioned=True)
+        .select_related('mandal')
+        .annotate(enrolled_count=Count('students'))
+        .order_by('name')
+    )
+    name_counts = Counter(s.name for s in schools)
     data = []
     for s in schools:
+        disp = f"{s.name} - {s.mandal.name}" if name_counts[s.name] > 1 else s.name
         data.append({
             'udise_code': s.udise_code,
             'name': s.name,
-            'display_name': s.display_name,
+            'display_name': disp,
             'school_type': s.school_type,
             'school_type_display': s.get_school_type_display(),
             'boys_quota': s.boys_quota,
             'girls_quota': s.girls_quota,
-            'enrolled': s.total_enrolled_count(),
+            'enrolled': s.enrolled_count,
         })
     return JsonResponse({'schools': data})
 
@@ -210,13 +221,25 @@ def api_schools_by_mandal(request):
 @require_GET
 def api_live_stats(request):
     """Real-time live counter endpoint for footer and dashboards."""
-    return JsonResponse({
-        'mandals_count': Mandal.objects.filter(schools__is_sanctioned=True).distinct().count(),
-        'schools_count': School.objects.filter(is_sanctioned=True).count(),
-        'enrolled_total': Student.objects.filter(school__is_sanctioned=True).count(),
-        'boys_total': Student.objects.filter(school__is_sanctioned=True, gender='BOY').count(),
-        'girls_total': Student.objects.filter(school__is_sanctioned=True, gender='GIRL').count(),
-    })
+    from django.core.cache import cache
+    from django.db.models import Count, Q
+
+    def _compute():
+        student_agg = Student.objects.filter(school__is_sanctioned=True).aggregate(
+            enrolled_total=Count('id'),
+            boys_total=Count('id', filter=Q(gender='BOY')),
+            girls_total=Count('id', filter=Q(gender='GIRL')),
+        )
+        return {
+            'mandals_count': Mandal.objects.filter(schools__is_sanctioned=True).distinct().count(),
+            'schools_count': School.objects.filter(is_sanctioned=True).count(),
+            'enrolled_total': student_agg['enrolled_total'] or 0,
+            'boys_total': student_agg['boys_total'] or 0,
+            'girls_total': student_agg['girls_total'] or 0,
+        }
+
+    data = cache.get_or_set('bsg_live_stats_api', _compute, 15)
+    return JsonResponse(data)
 
 
 @require_GET
@@ -1289,18 +1312,18 @@ def district_admin_account_view(request):
 
 @user_passes_test(is_district_admin_check, login_url='/login/')
 def district_dashboard_view(request):
-    # ── Single-query student count annotation ──────────────────────────────────
-    # Instead of calling school.boys_enrolled_count / school.girls_enrolled_count
-    # as Python properties (which fire one DB query per school = 350+ queries),
-    # we annotate the queryset with COUNT in a single SQL query.
+    # ── Single-query student & leader count annotation ─────────────────────────
+    # Use distinct=True on Count when joining multiple reverse relations
+    # (students + unit_leaders) so SQL joins never multiply counts.
     from django.db.models import Count, Q, Sum
 
-    mandals = Mandal.objects.all().order_by('name')
+    mandals = list(Mandal.objects.all().order_by('name'))
 
     # Base annotated school queryset — counts in SQL, not Python loops
     base_qs = School.objects.select_related('mandal').annotate(
-        boys_enrolled=Count('students', filter=Q(students__gender='BOY')),
-        girls_enrolled=Count('students', filter=Q(students__gender='GIRL')),
+        boys_enrolled=Count('students', filter=Q(students__gender='BOY'), distinct=True),
+        girls_enrolled=Count('students', filter=Q(students__gender='GIRL'), distinct=True),
+        unit_leaders_count=Count('unit_leaders', distinct=True),
     )
 
     schools_qs = base_qs
@@ -1316,36 +1339,37 @@ def district_dashboard_view(request):
 
     schools = schools_qs.order_by('mandal__name', 'name')
 
-    # ── Mandal progress stats — single aggregation query per stat ─────────────
-    # Aggregate all mandal data in one pass using DB aggregation.
-    from django.db.models import IntegerField, ExpressionWrapper
-
-    mandal_agg = (
-        School.objects
-        .values('mandal_id')
-        .annotate(
+    # ── Mandal progress stats — 2 separate aggregation queries (no join inflation)
+    school_mandal_agg = {
+        row['mandal_id']: row
+        for row in School.objects.values('mandal_id').annotate(
             school_count=Count('id'),
             boys_quota=Sum('boys_quota'),
             girls_quota=Sum('girls_quota'),
-            boys_enrolled=Count('students', filter=Q(students__gender='BOY')),
-            girls_enrolled=Count('students', filter=Q(students__gender='GIRL')),
         )
-    )
-    mandal_agg_map = {row['mandal_id']: row for row in mandal_agg}
+    }
+    student_mandal_agg = {
+        row['school__mandal_id']: row
+        for row in Student.objects.values('school__mandal_id').annotate(
+            boys_enrolled=Count('id', filter=Q(gender='BOY')),
+            girls_enrolled=Count('id', filter=Q(gender='GIRL')),
+        )
+    }
 
     mandal_stats = []
     for m in mandals:
-        agg = mandal_agg_map.get(m.id, {})
-        b_q = agg.get('boys_quota') or 0
-        g_q = agg.get('girls_quota') or 0
-        b_enr = agg.get('boys_enrolled') or 0
-        g_enr = agg.get('girls_enrolled') or 0
+        s_agg = school_mandal_agg.get(m.id, {})
+        st_agg = student_mandal_agg.get(m.id, {})
+        b_q = s_agg.get('boys_quota') or 0
+        g_q = s_agg.get('girls_quota') or 0
+        b_enr = st_agg.get('boys_enrolled') or 0
+        g_enr = st_agg.get('girls_enrolled') or 0
         tot_q = b_q + g_q
         tot_enr = b_enr + g_enr
         pct = round((tot_enr / tot_q * 100), 1) if tot_q > 0 else 0
         mandal_stats.append({
             'mandal': m,
-            'school_count': agg.get('school_count') or 0,
+            'school_count': s_agg.get('school_count') or 0,
             'boys_quota': b_q,
             'boys_enrolled': b_enr,
             'girls_quota': g_q,
@@ -1359,18 +1383,22 @@ def district_dashboard_view(request):
     audit_logs = AuditLog.objects.select_related('school', 'user').order_by('-created_at')[:50]
 
     # ── Overall KPIs — single DB aggregation each ─────────────────────────────
-    all_schools = base_qs.order_by('mandal__name', 'name')
+    all_schools = School.objects.select_related('mandal').only('id', 'udise_code', 'name', 'mandal__name').order_by('mandal__name', 'name')
 
     kpi = School.objects.aggregate(
         total_schools=Count('id'),
         total_boys_q=Sum('boys_quota'),
         total_girls_q=Sum('girls_quota'),
     )
+    student_kpi = Student.objects.aggregate(
+        total_boys_enr=Count('id', filter=Q(gender='BOY')),
+        total_girls_enr=Count('id', filter=Q(gender='GIRL')),
+    )
     total_schools = kpi['total_schools'] or 0
     total_boys_q = kpi['total_boys_q'] or 0
     total_girls_q = kpi['total_girls_q'] or 0
-    total_boys_enr = Student.objects.filter(gender='BOY').count()
-    total_girls_enr = Student.objects.filter(gender='GIRL').count()
+    total_boys_enr = student_kpi['total_boys_enr'] or 0
+    total_girls_enr = student_kpi['total_girls_enr'] or 0
     total_enr = total_boys_enr + total_girls_enr
     total_quota = total_boys_q + total_girls_q
     overall_pct = round((total_enr / total_quota * 100), 1) if total_quota > 0 else 0

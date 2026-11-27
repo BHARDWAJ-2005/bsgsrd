@@ -361,3 +361,14 @@ class GalleryPhoto(models.Model):
 
     def __str__(self):
         return f"{self.event_name} - {self.title or 'Photo'}"
+
+
+def _invalidate_global_stats_cache(**kwargs):
+    from django.core.cache import cache
+    cache.delete_many(['bsg_global_context_stats', 'bsg_live_stats_api'])
+
+
+from django.db.models.signals import post_save, post_delete
+for _cached_model in (Mandal, School, Student, DistrictNotice):
+    post_save.connect(_invalidate_global_stats_cache, sender=_cached_model)
+    post_delete.connect(_invalidate_global_stats_cache, sender=_cached_model)
