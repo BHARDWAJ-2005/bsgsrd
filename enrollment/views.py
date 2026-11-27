@@ -219,6 +219,12 @@ def api_schools_by_mandal(request):
 
 
 @require_GET
+def health_check_view(request):
+    """Lightweight zero-DB health endpoint for Render / UptimeRobot keep-alive pings."""
+    return JsonResponse({'status': 'ok'})
+
+
+@require_GET
 def api_live_stats(request):
     """Real-time live counter endpoint for footer and dashboards."""
     from django.core.cache import cache

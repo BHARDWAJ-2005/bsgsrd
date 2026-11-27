@@ -11,6 +11,7 @@ urlpatterns = [
     path('contact/', views.contact_view, name='contact'),
 
     # APIs
+    path('health/', views.health_check_view, name='health_check'),
     path('api/schools-by-mandal/', views.api_schools_by_mandal, name='api_schools_by_mandal'),
     path('api/schools/<str:udise_code>/hint/', views.api_school_verification_hint, name='api_school_verification_hint'),
     path('api/live-stats/', views.api_live_stats, name='api_live_stats'),
