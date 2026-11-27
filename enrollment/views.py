@@ -1289,8 +1289,21 @@ def district_admin_account_view(request):
 
 @user_passes_test(is_district_admin_check, login_url='/login/')
 def district_dashboard_view(request):
+    # ── Single-query student count annotation ──────────────────────────────────
+    # Instead of calling school.boys_enrolled_count / school.girls_enrolled_count
+    # as Python properties (which fire one DB query per school = 350+ queries),
+    # we annotate the queryset with COUNT in a single SQL query.
+    from django.db.models import Count, Q, Sum
+
     mandals = Mandal.objects.all().order_by('name')
-    schools_qs = School.objects.select_related('mandal').all()
+
+    # Base annotated school queryset — counts in SQL, not Python loops
+    base_qs = School.objects.select_related('mandal').annotate(
+        boys_enrolled=Count('students', filter=Q(students__gender='BOY')),
+        girls_enrolled=Count('students', filter=Q(students__gender='GIRL')),
+    )
+
+    schools_qs = base_qs
 
     # Search & Mandal filter
     mandal_id = request.GET.get('mandal_id')
@@ -1303,20 +1316,36 @@ def district_dashboard_view(request):
 
     schools = schools_qs.order_by('mandal__name', 'name')
 
-    # Mandal progress stats
+    # ── Mandal progress stats — single aggregation query per stat ─────────────
+    # Aggregate all mandal data in one pass using DB aggregation.
+    from django.db.models import IntegerField, ExpressionWrapper
+
+    mandal_agg = (
+        School.objects
+        .values('mandal_id')
+        .annotate(
+            school_count=Count('id'),
+            boys_quota=Sum('boys_quota'),
+            girls_quota=Sum('girls_quota'),
+            boys_enrolled=Count('students', filter=Q(students__gender='BOY')),
+            girls_enrolled=Count('students', filter=Q(students__gender='GIRL')),
+        )
+    )
+    mandal_agg_map = {row['mandal_id']: row for row in mandal_agg}
+
     mandal_stats = []
     for m in mandals:
-        m_schools = m.schools.all()
-        b_q = sum(s.boys_quota for s in m_schools)
-        g_q = sum(s.girls_quota for s in m_schools)
-        b_enr = Student.objects.filter(school__mandal=m, gender='BOY').count()
-        g_enr = Student.objects.filter(school__mandal=m, gender='GIRL').count()
+        agg = mandal_agg_map.get(m.id, {})
+        b_q = agg.get('boys_quota') or 0
+        g_q = agg.get('girls_quota') or 0
+        b_enr = agg.get('boys_enrolled') or 0
+        g_enr = agg.get('girls_enrolled') or 0
         tot_q = b_q + g_q
         tot_enr = b_enr + g_enr
         pct = round((tot_enr / tot_q * 100), 1) if tot_q > 0 else 0
         mandal_stats.append({
             'mandal': m,
-            'school_count': m_schools.count(),
+            'school_count': agg.get('school_count') or 0,
             'boys_quota': b_q,
             'boys_enrolled': b_enr,
             'girls_quota': g_q,
@@ -1329,11 +1358,17 @@ def district_dashboard_view(request):
     # Recent Audit Logs
     audit_logs = AuditLog.objects.select_related('school', 'user').order_by('-created_at')[:50]
 
-    # Overall KPIs
-    all_schools = School.objects.select_related('mandal').order_by('mandal__name', 'name')
-    total_schools = School.objects.count()
-    total_boys_q = sum(s.boys_quota for s in School.objects.all())
-    total_girls_q = sum(s.girls_quota for s in School.objects.all())
+    # ── Overall KPIs — single DB aggregation each ─────────────────────────────
+    all_schools = base_qs.order_by('mandal__name', 'name')
+
+    kpi = School.objects.aggregate(
+        total_schools=Count('id'),
+        total_boys_q=Sum('boys_quota'),
+        total_girls_q=Sum('girls_quota'),
+    )
+    total_schools = kpi['total_schools'] or 0
+    total_boys_q = kpi['total_boys_q'] or 0
+    total_girls_q = kpi['total_girls_q'] or 0
     total_boys_enr = Student.objects.filter(gender='BOY').count()
     total_girls_enr = Student.objects.filter(gender='GIRL').count()
     total_enr = total_boys_enr + total_girls_enr
